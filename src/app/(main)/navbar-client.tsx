@@ -24,7 +24,7 @@ export function NavbarClient({ user }: NavbarProps) {
           className='flex items-center gap-2 font-semibold text-lg'
           onClick={() => setMobileMenuOpen(false)}
         >
-          Sadna Tracker
+          Sadhna Tracker
         </Link>
 
         {/* Desktop Navigation */}
