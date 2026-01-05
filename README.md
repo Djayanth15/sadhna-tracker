@@ -1,36 +1,108 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sadna Tracker
+
+A comprehensive Body & Soul wellness tracking application built with Next.js, Prisma, and PostgreSQL.
+
+## Features
+
+- 🎯 **Goal Setting**: Set weekly targets for lectures, reading, and study/work hours
+- 📊 **Daily Tracking**: Track daily spiritual (MP attendance, Japa) and physical wellness metrics
+- 📈 **Weekly Summaries**: Automatic weekly score calculation with detailed breakdowns
+- 👥 **Admin Dashboard**: View all users' progress and weekly summaries
+- 🌓 **Dark Mode**: Built-in theme toggle
+- 📱 **Responsive Design**: Mobile-first responsive UI
+
+## Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Language**: TypeScript
+- **Database**: PostgreSQL
+- **ORM**: Prisma
+- **Authentication**: Better-Auth
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Date Handling**: date-fns
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL database
+- npm or yarn
+
+### Installation
+
+1. Clone the repository:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/sadna-tracker.git
+cd sadna-tracker
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Set up environment variables:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` with your database credentials:
+
+```env
+DATABASE_URL="postgresql://user:password@localhost:5432/sadna_tracker"
+BETTER_AUTH_SECRET="your-secret-key"
+BETTER_AUTH_URL="http://localhost:3000"
+```
+
+4. Set up the database:
+
+```bash
+npx prisma generate
+npx prisma db push
+```
+
+5. Run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+6. Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database Schema
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The app uses the following main models:
 
-## Learn More
+- **User**: User accounts with authentication
+- **WeeklyGoals**: User's weekly targets
+- **DailyScore**: Daily wellness tracking entries
+- **WeeklySummary**: Calculated weekly summaries
 
-To learn more about Next.js, take a look at the following resources:
+## Scoring System
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Soul Score (out of 440 points per week)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- MP Attendance: 20 pts (by 4:30 AM), 5 pts (4:30-4:35 AM)
+- Japa Completion: 20 pts (by 9 AM), 10 pts (by 12 PM)
+- Lectures: Up to 100 pts based on weekly goal completion
+- Reading: Up to 60 pts based on weekly goal completion
 
-## Deploy on Vercel
+### Body Score (out of 595 points per week)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Sleep Time: 20 pts (by 9:15 PM), 10 pts (by 10 PM)
+- Wake Time: 20 pts (by 3:40 AM), 10 pts (by 4:15 AM)
+- Rest: 20 pts (<30 min), 10 pts (<60 min)
+- Study/Work: Up to 140 pts based on weekly goal completion
+- Same Day Entry: 5 pts bonus
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This project is licensed under the MIT License.

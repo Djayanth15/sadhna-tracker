@@ -1,0 +1,272 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// generator client {
+//   provider = "prisma-client"
+//   output   = "../src/generated/prisma"
+// }
+
+// datasource db {
+//   provider = "postgresql"
+// }
+
+// model User {
+//   id            String    @id
+//   name          String
+//   email         String
+//   emailVerified Boolean   @default(false)
+//   image         String?
+//   role          String?
+//   createdAt     DateTime  @default(now())
+//   updatedAt     DateTime  @updatedAt
+//   sessions      Session[]
+//   accounts      Account[]
+
+//   @@unique([email])
+//   @@map("user")
+// }
+
+// model Session {
+//   id        String   @id
+//   expiresAt DateTime
+//   token     String
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+//   ipAddress String?
+//   userAgent String?
+//   userId    String
+//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+//   @@unique([token])
+//   @@index([userId])
+//   @@map("session")
+// }
+
+// model Account {
+//   id                    String    @id
+//   accountId             String
+//   providerId            String
+//   userId                String
+//   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   accessToken           String?
+//   refreshToken          String?
+//   idToken               String?
+//   accessTokenExpiresAt  DateTime?
+//   refreshTokenExpiresAt DateTime?
+//   scope                 String?
+//   password              String?
+//   createdAt             DateTime  @default(now())
+//   updatedAt             DateTime  @updatedAt
+
+//   @@index([userId])
+//   @@map("account")
+// }
+
+// model Verification {
+//   id         String   @id
+//   identifier String
+//   value      String
+//   expiresAt  DateTime
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+
+//   @@index([identifier])
+//   @@map("verification")
+// }
+
+// model DailyScore {
+//   id        String   @id @default(cuid())
+//   userId    String
+//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+//   date      DateTime @db.Date
+//   bodyScore Float    @db.DoublePrecision
+//   soulScore Float    @db.DoublePrecision
+//   average   Float    @db.DoublePrecision // Computed: (bodyScore + soulScore) / 2
+//   createdAt DateTime @default(now())
+//   updatedAt DateTime @updatedAt
+
+//   @@unique([userId, date]) // One score entry per user per day
+//   @@index([userId])
+//   @@index([date])
+//   @@map("daily_score")
+// }
+
+// model WeeklySummary {
+//   id           String   @id @default(cuid())
+//   userId       String
+//   weekStart    DateTime @db.Date // Monday of the week
+//   weekEnd      DateTime @db.Date // Sunday of the week
+//   bodyAverage  Float    @db.DoublePrecision
+//   soulAverage  Float    @db.DoublePrecision
+//   overallAverage Float  @db.DoublePrecision
+//   daysRecorded Int      // Number of days in the week that have scores
+//   createdAt    DateTime @default(now())
+//   updatedAt    DateTime @updatedAt
+
+//   @@unique([userId, weekStart]) // One summary per user per week
+//   @@index([userId])
+//   @@index([weekStart])
+//   @@map("weekly_summary")
+// }
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id              String          @id
+  name            String
+  email           String
+  emailVerified   Boolean         @default(false)
+  image           String?
+  role            String?         @default("user") // "user" or "admin"
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  sessions        Session[]
+  accounts        Account[]
+  dailyScores     DailyScore[]
+  weeklyGoals     WeeklyGoals?
+  weeklySummaries WeeklySummary[]
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// New models for Body & Soul Tracker
+
+// Weekly goals set by user once
+model WeeklyGoals {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  maxHoursLectures  Float // Max hours per week for listening to lectures
+  maxHoursReading   Float // Max hours per week for book reading
+  maxHoursStudyWork Float // Max hours per week for study/work
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("weekly_goals")
+}
+
+model DailyScore {
+  id     String   @id @default(cuid())
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date   DateTime @db.Date
+
+  // Soul scores (daily questions)
+  mpAttendanceTime    DateTime? // Time of MP attendance
+  mpAttendanceScore   Float     @default(0)
+  japaCompletionTime  DateTime? // Time japa completed
+  japaCompletionScore Float     @default(0)
+  lectureMinutes      Float     @default(0) // Minutes of lectures listened that day
+  readingMinutes      Float     @default(0) // Minutes of reading that day
+
+  // Body scores (daily questions)
+  sleepTime        DateTime? // When went to sleep
+  sleepScore       Float     @default(0)
+  wakeTime         DateTime? // When woke up
+  wakeScore        Float     @default(0)
+  studyWorkMinutes Float     @default(0) // Minutes of study/work that day
+  restMinutes      Float     @default(0) // Minutes of rest during day
+  restScore        Float     @default(0)
+  filledSameDay    Boolean   @default(false) // 5 marks if filled same day
+  sameDayScore     Float     @default(0)
+
+  // Calculated daily scores
+  dailySoulScore Float    @default(0) // MP + Japa scores
+  dailyBodyScore Float    @default(0) // Sleep + Wake + Rest + SameDay
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, date]) // One score entry per user per day
+  @@index([userId])
+  @@index([date])
+  @@map("daily_score")
+}
+
+model WeeklySummary {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weekStart DateTime @db.Date // Monday of the week
+  weekEnd   DateTime @db.Date // Sunday of the week
+
+  // Soul weekly scores
+  totalMpJapaScore      Float // Sum of all MP + Japa scores
+  lectureEffectiveScore Float // (total lecture mins / max mins) * 100
+  readingEffectiveScore Float // (total reading mins / max mins) * 60
+  totalSoulScore        Float // [(all scores) / 440] * 100
+
+  // Body weekly scores
+  totalDailyBodyScore     Float // Sum of sleep + wake + rest + sameDay
+  studyWorkEffectiveScore Float // (total study mins / max mins) * 140
+  totalBodyScore          Float // [all scores / 595] * 100
+
+  overallAverage Float // (totalSoulScore + totalBodyScore) / 2
+  daysRecorded   Int // Number of days with entries
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, weekStart]) // One summary per user per week
+  @@index([userId])
+  @@index([weekStart])
+  @@map("weekly_summary")
+}
