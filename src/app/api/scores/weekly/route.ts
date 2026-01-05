@@ -185,6 +185,7 @@ import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { startOfWeek, endOfWeek } from 'date-fns';
+import type { DailyScore } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
@@ -224,7 +225,7 @@ export async function POST(req: NextRequest) {
     const weekEnd = endOfWeek(new Date(weekStartDate), { weekStartsOn: 1 });
 
     // Get all daily scores for this week
-    const dailyScores = await prisma.dailyScore.findMany({
+    const dailyScores: DailyScore[] = await prisma.dailyScore.findMany({
       where: {
         userId: session.user.id,
         date: {
