@@ -185,7 +185,7 @@ import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 import { startOfWeek, endOfWeek } from 'date-fns';
-import type { DailyScore } from '@prisma/client';
+import { DailyScore } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
   try {
