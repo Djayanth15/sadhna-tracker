@@ -1,6 +1,6 @@
 import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
-import prisma from '@/lib/prisma';
+import { prisma } from '@/lib/prisma';
 import { sendEmail } from './email';
 import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { passwordSchema } from './validation';
