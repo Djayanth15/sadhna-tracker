@@ -110,7 +110,7 @@ export default function HomePage() {
             </div>
 
             <h1 className='text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 leading-tight px-4'>
-              Sadna Tracker
+              Sadhna Tracker
             </h1>
 
             <p className='text-base sm:text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-6 sm:mb-8 max-w-3xl mx-auto px-4'>

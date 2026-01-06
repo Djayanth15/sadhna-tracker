@@ -10,6 +10,10 @@ export const {
   sendVerificationEmail,
   requestPasswordReset,
   resetPassword,
+  changeEmail,
+  revokeSessions,
+  changePassword,
+  updateUser,
 } = createAuthClient({
   plugins: [inferAdditionalFields<typeof auth>()],
 });
