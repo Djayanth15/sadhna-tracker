@@ -90,8 +90,17 @@ model WeeklyGoals {
   maxHoursLectures  Float // Max hours per week for listening to lectures
   maxHoursReading   Float // Max hours per week for book reading
   maxHoursStudyWork Float // Max hours per week for study/work
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+
+  // Wake time goals (stored as "HH:MM" format)
+  wakeTime20Points String? // Wake by this time for 20 points
+  wakeTime10Points String? // Wake by this time for 10 points (0 after)
+
+  // Sleep time goals (stored as "HH:MM" format)
+  sleepTime20Points String? // Sleep by this time for 20 points
+  sleepTime10Points String? // Sleep by this time for 10 points (0 after)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("weekly_goals")
 }
