@@ -33,7 +33,15 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { maxHoursLectures, maxHoursReading, maxHoursStudyWork } = body;
+    const {
+      maxHoursLectures,
+      maxHoursReading,
+      maxHoursStudyWork,
+      wakeTime20Points,
+      wakeTime10Points,
+      sleepTime20Points,
+      sleepTime10Points,
+    } = body;
 
     const goals = await prisma.weeklyGoals.upsert({
       where: { userId: session.user.id },
@@ -41,12 +49,20 @@ export async function POST(req: NextRequest) {
         maxHoursLectures,
         maxHoursReading,
         maxHoursStudyWork,
+        wakeTime20Points,
+        wakeTime10Points,
+        sleepTime20Points,
+        sleepTime10Points,
       },
       create: {
         userId: session.user.id,
         maxHoursLectures,
         maxHoursReading,
         maxHoursStudyWork,
+        wakeTime20Points,
+        wakeTime10Points,
+        sleepTime20Points,
+        sleepTime10Points,
       },
     });
 

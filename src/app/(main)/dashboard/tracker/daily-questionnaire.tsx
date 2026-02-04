@@ -670,9 +670,45 @@ export function DailyQuestionnaire({
   );
   const [userTimezone, setUserTimezone] = useState<string>('');
 
+  // Time goals from user settings
+  const [timeGoals, setTimeGoals] = useState<{
+    wakeTime20Points: string;
+    wakeTime10Points: string;
+    sleepTime20Points: string;
+    sleepTime10Points: string;
+  }>({
+    wakeTime20Points: '03:40',
+    wakeTime10Points: '04:15',
+    sleepTime20Points: '21:15',
+    sleepTime10Points: '22:00',
+  });
+
   useEffect(() => {
     const tz = getUserTimezone();
     setUserTimezone(tz);
+  }, []);
+
+  // Fetch time goals from user's settings
+  useEffect(() => {
+    const fetchTimeGoals = async () => {
+      try {
+        const response = await fetch('/api/goals');
+        if (response.ok) {
+          const data = await response.json();
+          if (data) {
+            setTimeGoals({
+              wakeTime20Points: data.wakeTime20Points || '03:40',
+              wakeTime10Points: data.wakeTime10Points || '04:15',
+              sleepTime20Points: data.sleepTime20Points || '21:15',
+              sleepTime10Points: data.sleepTime10Points || '22:00',
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch time goals:', error);
+      }
+    };
+    fetchTimeGoals();
   }, []);
 
   // Fetch existing entry whenever date or timezone changes
@@ -827,13 +863,19 @@ export function DailyQuestionnaire({
       }
     }
 
-    // Sleep Score
+    // Helper to convert "HH:MM" to total minutes
+    const timeToMinutes = (timeStr: string): number => {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    // Sleep Score - using user's time goals
     let sleepScore = 0;
     if (sleepTime) {
       const [hours, minutes] = sleepTime.split(':').map(Number);
       const totalMinutes = hours * 60 + minutes;
-      const target1 = 21 * 60 + 15; // 9:15 PM
-      const target2 = 22 * 60; // 10:00 PM
+      const target1 = timeToMinutes(timeGoals.sleepTime20Points);
+      const target2 = timeToMinutes(timeGoals.sleepTime10Points);
 
       if (totalMinutes <= target1) {
         sleepScore = 20;
@@ -844,13 +886,13 @@ export function DailyQuestionnaire({
       }
     }
 
-    // Wake Score
+    // Wake Score - using user's time goals
     let wakeScore = 0;
     if (wakeTime) {
       const [hours, minutes] = wakeTime.split(':').map(Number);
       const totalMinutes = hours * 60 + minutes;
-      const target1 = 3 * 60 + 40; // 3:40 AM
-      const target2 = 4 * 60 + 15; // 4:15 AM
+      const target1 = timeToMinutes(timeGoals.wakeTime20Points);
+      const target2 = timeToMinutes(timeGoals.wakeTime10Points);
 
       if (totalMinutes <= target1) {
         wakeScore = 20;
