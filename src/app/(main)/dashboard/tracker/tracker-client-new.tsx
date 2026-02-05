@@ -1674,7 +1674,6 @@ import {
   endOfWeek,
   eachDayOfInterval,
   addDays,
-  parseISO,
 } from 'date-fns';
 import { GoalsForm } from './goals-form';
 import { DailyQuestionnaire } from './daily-questionnaire';
@@ -1732,6 +1731,15 @@ interface WeeklySummaryWithUser extends WeeklySummary {
 interface TrackerClientProps {
   user: User;
 }
+
+// Helper to parse ISO date string as local date (ignoring timezone)
+// This fixes the off-by-one day issue when dates stored as DATE type
+// are returned as UTC ISO strings and displayed in local timezone
+const parseLocalDate = (isoString: string) => {
+  const datePart = isoString.split('T')[0];
+  const [year, month, day] = datePart.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
 
 export function TrackerClientNew({ user }: TrackerClientProps) {
   const [goals, setGoals] = useState<WeeklyGoals | null>(null);
@@ -2205,8 +2213,8 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                     <Card key={week.id}>
                       <CardHeader className='bg-primary text-primary-foreground p-4'>
                         <CardTitle className='text-sm sm:text-base'>
-                          {format(parseISO(week.weekStart), 'MMM d')} -{' '}
-                          {format(parseISO(week.weekEnd), 'MMM d, yyyy')}
+                          {format(parseLocalDate(week.weekStart), 'MMM d')} -{' '}
+                          {format(parseLocalDate(week.weekEnd), 'MMM d, yyyy')}
                         </CardTitle>
                         <p className='text-xs sm:text-sm opacity-90'>
                           {week.daysRecorded} days recorded
@@ -2322,7 +2330,7 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                   <div key={score.id} className='p-4 space-y-2'>
                                     <p className='font-medium text-sm'>
                                       {format(
-                                        parseISO(score.date),
+                                        parseLocalDate(score.date),
                                         'MMM d, yyyy'
                                       )}
                                     </p>
@@ -2366,7 +2374,7 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                       <TableRow key={score.id}>
                                         <TableCell>
                                           {format(
-                                            parseISO(score.date),
+                                            parseLocalDate(score.date),
                                             'MMM d, yyyy'
                                           )}
                                         </TableCell>
@@ -2422,12 +2430,12 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                     <CardHeader className='bg-muted p-3 sm:p-4'>
                                       <CardTitle className='text-sm sm:text-base'>
                                         {format(
-                                          parseISO(week.weekStart),
+                                          parseLocalDate(week.weekStart),
                                           'MMM d'
                                         )}{' '}
                                         -{' '}
                                         {format(
-                                          parseISO(week.weekEnd),
+                                          parseLocalDate(week.weekEnd),
                                           'MMM d, yyyy'
                                         )}
                                       </CardTitle>
