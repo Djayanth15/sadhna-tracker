@@ -1855,11 +1855,14 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
       const weekStart = startOfWeek(new Date(selectedDate), {
         weekStartsOn: 1,
       });
+      // Send date as YYYY-MM-DD string to avoid timezone shift issues
+      // when the server parses the ISO timestamp
+      const weekStartStr = format(weekStart, 'yyyy-MM-dd');
       const response = await fetch('/api/scores/weekly', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          weekStartDate: weekStart.toISOString(),
+          weekStartDate: weekStartStr,
         }),
       });
 
