@@ -154,6 +154,13 @@ model WeeklySummary {
   overallAverage Float // (totalSoulScore + totalBodyScore) / 2
   daysRecorded   Int // Number of days with entries
 
+  // Raw hours and day counts for display
+  totalLectureHours    Float @default(0) // Total hours of hearing lectures
+  totalReadingHours    Float @default(0) // Total hours of reading
+  totalStudyWorkHours  Float @default(0) // Total hours of study/work
+  daysWithMp20         Int   @default(0) // Days in week with MP score = 20
+  daysWithJapa20       Int   @default(0) // Days in week with Japa score = 20
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

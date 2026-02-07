@@ -1719,6 +1719,11 @@ interface WeeklySummary {
   readingEffectiveScore: number;
   totalDailyBodyScore: number;
   studyWorkEffectiveScore: number;
+  totalLectureHours: number;
+  totalReadingHours: number;
+  totalStudyWorkHours: number;
+  daysWithMp20: number;
+  daysWithJapa20: number;
 }
 
 interface WeeklySummaryWithUser extends WeeklySummary {
@@ -2213,54 +2218,65 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                         </p>
                       </CardHeader>
                       <CardContent className='p-4 sm:pt-6'>
-                        <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4'>
-                          {/* Soul Score */}
+                        <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4'>
+                          {/* Hours Summary */}
                           <div className='p-3 sm:p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg'>
-                            <p className='text-xs sm:text-sm text-muted-foreground mb-1'>
-                              Soul Score
+                            <p className='text-xs sm:text-sm text-muted-foreground mb-2'>
+                              Weekly Hours
                             </p>
-                            <p className='text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400'>
-                              {week.totalSoulScore.toFixed(2)}%
-                            </p>
-                            <div className='text-xs mt-2 space-y-0.5 sm:space-y-1'>
-                              <p>MP+Japa: {week.totalMpJapaScore.toFixed(0)}</p>
-                              <p>
-                                Lectures:{' '}
-                                {week.lectureEffectiveScore.toFixed(1)}
-                              </p>
-                              <p>
-                                Reading: {week.readingEffectiveScore.toFixed(1)}
-                              </p>
+                            <div className='space-y-1.5'>
+                              <div className='flex justify-between items-center'>
+                                <span className='text-xs sm:text-sm'>Hearing Lectures</span>
+                                <span className='text-sm sm:text-base font-bold text-purple-600 dark:text-purple-400'>
+                                  {(week.totalLectureHours ?? 0).toFixed(1)} hrs
+                                </span>
+                              </div>
+                              <div className='flex justify-between items-center'>
+                                <span className='text-xs sm:text-sm'>Reading</span>
+                                <span className='text-sm sm:text-base font-bold text-purple-600 dark:text-purple-400'>
+                                  {(week.totalReadingHours ?? 0).toFixed(1)} hrs
+                                </span>
+                              </div>
+                              <div className='flex justify-between items-center'>
+                                <span className='text-xs sm:text-sm'>Study/Work</span>
+                                <span className='text-sm sm:text-base font-bold text-purple-600 dark:text-purple-400'>
+                                  {(week.totalStudyWorkHours ?? 0).toFixed(1)} hrs
+                                </span>
+                              </div>
                             </div>
                           </div>
 
-                          {/* Body Score */}
-                          <div className='p-3 sm:p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg'>
-                            <p className='text-xs sm:text-sm text-muted-foreground mb-1'>
-                              Body Score
-                            </p>
-                            <p className='text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400'>
-                              {week.totalBodyScore.toFixed(2)}%
-                            </p>
-                            <div className='text-xs mt-2 space-y-0.5 sm:space-y-1'>
-                              <p>
-                                Daily: {week.totalDailyBodyScore.toFixed(0)}
-                              </p>
-                              <p>
-                                Study/Work:{' '}
-                                {week.studyWorkEffectiveScore.toFixed(1)}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Overall Score */}
+                          {/* Days with Full Marks */}
                           <div className='p-3 sm:p-4 bg-green-50 dark:bg-green-950/30 rounded-lg'>
-                            <p className='text-xs sm:text-sm text-muted-foreground mb-1'>
-                              Overall
+                            <p className='text-xs sm:text-sm text-muted-foreground mb-2'>
+                              Days with 20 Marks
                             </p>
-                            <p className='text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400'>
-                              {week.overallAverage.toFixed(2)}%
-                            </p>
+                            <div className='space-y-1.5'>
+                              <div className='flex justify-between items-center'>
+                                <span className='text-xs sm:text-sm'>MP (Morning Program)</span>
+                                <span className='text-sm sm:text-base font-bold text-green-600 dark:text-green-400'>
+                                  {week.daysWithMp20 ?? 0} / 7
+                                </span>
+                              </div>
+                              <div className='flex justify-between items-center'>
+                                <span className='text-xs sm:text-sm'>Japa</span>
+                                <span className='text-sm sm:text-base font-bold text-green-600 dark:text-green-400'>
+                                  {week.daysWithJapa20 ?? 0} / 7
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Overall Score */}
+                        <div className='mt-3 p-3 sm:p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg'>
+                          <div className='flex justify-between items-center'>
+                            <span className='text-xs sm:text-sm text-muted-foreground'>
+                              Overall Score
+                            </span>
+                            <span className='text-xl sm:text-2xl font-bold text-blue-600 dark:text-blue-400'>
+                              {week.overallAverage.toFixed(1)}%
+                            </span>
                           </div>
                         </div>
                       </CardContent>
@@ -2436,64 +2452,62 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                       </p>
                                     </CardHeader>
                                     <CardContent className='p-3 sm:p-4'>
-                                      <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+                                      <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
                                         <div className='p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg'>
-                                          <p className='text-xs text-muted-foreground mb-1'>
-                                            Soul Score
+                                          <p className='text-xs text-muted-foreground mb-2'>
+                                            Weekly Hours
                                           </p>
-                                          <p className='text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-400'>
-                                            {week.totalSoulScore.toFixed(2)}%
-                                          </p>
-                                          <div className='text-xs mt-1 space-y-0.5'>
-                                            <p>
-                                              MP+Japa:{' '}
-                                              {week.totalMpJapaScore.toFixed(0)}
-                                            </p>
-                                            <p>
-                                              Lectures:{' '}
-                                              {week.lectureEffectiveScore.toFixed(
-                                                1
-                                              )}
-                                            </p>
-                                            <p>
-                                              Reading:{' '}
-                                              {week.readingEffectiveScore.toFixed(
-                                                1
-                                              )}
-                                            </p>
-                                          </div>
-                                        </div>
-
-                                        <div className='p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg'>
-                                          <p className='text-xs text-muted-foreground mb-1'>
-                                            Body Score
-                                          </p>
-                                          <p className='text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400'>
-                                            {week.totalBodyScore.toFixed(2)}%
-                                          </p>
-                                          <div className='text-xs mt-1 space-y-0.5'>
-                                            <p>
-                                              Daily:{' '}
-                                              {week.totalDailyBodyScore.toFixed(
-                                                0
-                                              )}
-                                            </p>
-                                            <p>
-                                              Study/Work:{' '}
-                                              {week.studyWorkEffectiveScore.toFixed(
-                                                1
-                                              )}
-                                            </p>
+                                          <div className='space-y-1'>
+                                            <div className='flex justify-between items-center'>
+                                              <span className='text-xs'>Hearing</span>
+                                              <span className='text-sm font-bold text-purple-600 dark:text-purple-400'>
+                                                {(week.totalLectureHours ?? 0).toFixed(1)} hrs
+                                              </span>
+                                            </div>
+                                            <div className='flex justify-between items-center'>
+                                              <span className='text-xs'>Reading</span>
+                                              <span className='text-sm font-bold text-purple-600 dark:text-purple-400'>
+                                                {(week.totalReadingHours ?? 0).toFixed(1)} hrs
+                                              </span>
+                                            </div>
+                                            <div className='flex justify-between items-center'>
+                                              <span className='text-xs'>Study/Work</span>
+                                              <span className='text-sm font-bold text-purple-600 dark:text-purple-400'>
+                                                {(week.totalStudyWorkHours ?? 0).toFixed(1)} hrs
+                                              </span>
+                                            </div>
                                           </div>
                                         </div>
 
                                         <div className='p-3 bg-green-50 dark:bg-green-950/30 rounded-lg'>
-                                          <p className='text-xs text-muted-foreground mb-1'>
-                                            Overall
+                                          <p className='text-xs text-muted-foreground mb-2'>
+                                            Days with 20 Marks
                                           </p>
-                                          <p className='text-lg sm:text-xl font-bold text-green-600 dark:text-green-400'>
-                                            {week.overallAverage.toFixed(2)}%
-                                          </p>
+                                          <div className='space-y-1'>
+                                            <div className='flex justify-between items-center'>
+                                              <span className='text-xs'>MP</span>
+                                              <span className='text-sm font-bold text-green-600 dark:text-green-400'>
+                                                {week.daysWithMp20 ?? 0} / 7
+                                              </span>
+                                            </div>
+                                            <div className='flex justify-between items-center'>
+                                              <span className='text-xs'>Japa</span>
+                                              <span className='text-sm font-bold text-green-600 dark:text-green-400'>
+                                                {week.daysWithJapa20 ?? 0} / 7
+                                              </span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      <div className='mt-3 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg'>
+                                        <div className='flex justify-between items-center'>
+                                          <span className='text-xs text-muted-foreground'>
+                                            Overall Score
+                                          </span>
+                                          <span className='text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400'>
+                                            {week.overallAverage.toFixed(1)}%
+                                          </span>
                                         </div>
                                       </div>
                                     </CardContent>
