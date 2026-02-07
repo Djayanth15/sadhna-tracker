@@ -1671,7 +1671,6 @@ import {
 import {
   format,
   startOfWeek,
-  endOfWeek,
   eachDayOfInterval,
   addDays,
   parseISO,
@@ -2053,9 +2052,12 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                         )}{' '}
                         -{' '}
                         {format(
-                          endOfWeek(new Date(selectedDate), {
-                            weekStartsOn: 1,
-                          }),
+                          addDays(
+                            startOfWeek(new Date(selectedDate), {
+                              weekStartsOn: 1,
+                            }),
+                            6
+                          ),
                           'MMM d, yyyy'
                         )}
                       </p>
