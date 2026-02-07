@@ -369,7 +369,7 @@
 import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { startOfWeek, endOfWeek, addDays } from 'date-fns';
+import { startOfWeek, addDays } from 'date-fns';
 import { DailyScore } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
@@ -409,7 +409,7 @@ export async function POST(req: NextRequest) {
     // Get Monday of the week (week starts on Monday)
     const weekStart = startOfWeek(new Date(weekStartDate), { weekStartsOn: 1 });
     // Get Sunday of the week (last day of the week)
-    const weekEnd = endOfWeek(new Date(weekStartDate), { weekStartsOn: 1 });
+    const weekEnd = addDays(weekStart, 6);
 
     // Get all daily scores for this week
     // Use gte and lt to get exactly 7 days (Monday through Sunday)
