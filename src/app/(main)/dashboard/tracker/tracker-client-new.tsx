@@ -1719,6 +1719,13 @@ interface WeeklySummary {
   readingEffectiveScore: number;
   totalDailyBodyScore: number;
   studyWorkEffectiveScore: number;
+  totalLectureHours: number;
+  totalReadingHours: number;
+  totalStudyWorkHours: number;
+  daysWithMp20: number;
+  daysWithJapa20: number;
+  daysWithSleep20: number;
+  daysWithWake20: number;
 }
 
 interface WeeklySummaryWithUser extends WeeklySummary {
@@ -2223,13 +2230,14 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                               {week.totalSoulScore.toFixed(2)}%
                             </p>
                             <div className='text-xs mt-2 space-y-0.5 sm:space-y-1'>
-                              <p>MP+Japa: {week.totalMpJapaScore.toFixed(0)}</p>
                               <p>
-                                Lectures:{' '}
-                                {week.lectureEffectiveScore.toFixed(1)}
+                                MP on time: {week.daysWithMp20 ?? 0} / 7 days
                               </p>
                               <p>
-                                Reading: {week.readingEffectiveScore.toFixed(1)}
+                                Lectures: {(week.totalLectureHours ?? 0).toFixed(1)} hrs
+                              </p>
+                              <p>
+                                Reading: {(week.totalReadingHours ?? 0).toFixed(1)} hrs
                               </p>
                             </div>
                           </div>
@@ -2244,11 +2252,13 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                             </p>
                             <div className='text-xs mt-2 space-y-0.5 sm:space-y-1'>
                               <p>
-                                Daily: {week.totalDailyBodyScore.toFixed(0)}
+                                Study/Work: {(week.totalStudyWorkHours ?? 0).toFixed(1)} hrs
                               </p>
                               <p>
-                                Study/Work:{' '}
-                                {week.studyWorkEffectiveScore.toFixed(1)}
+                                Sleep on time: {week.daysWithSleep20 ?? 0} / 7 days
+                              </p>
+                              <p>
+                                Wake on time: {week.daysWithWake20 ?? 0} / 7 days
                               </p>
                             </div>
                           </div>
@@ -2446,20 +2456,13 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                           </p>
                                           <div className='text-xs mt-1 space-y-0.5'>
                                             <p>
-                                              MP+Japa:{' '}
-                                              {week.totalMpJapaScore.toFixed(0)}
+                                              MP on time: {week.daysWithMp20 ?? 0} / 7 days
                                             </p>
                                             <p>
-                                              Lectures:{' '}
-                                              {week.lectureEffectiveScore.toFixed(
-                                                1
-                                              )}
+                                              Lectures: {(week.totalLectureHours ?? 0).toFixed(1)} hrs
                                             </p>
                                             <p>
-                                              Reading:{' '}
-                                              {week.readingEffectiveScore.toFixed(
-                                                1
-                                              )}
+                                              Reading: {(week.totalReadingHours ?? 0).toFixed(1)} hrs
                                             </p>
                                           </div>
                                         </div>
@@ -2473,16 +2476,13 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                           </p>
                                           <div className='text-xs mt-1 space-y-0.5'>
                                             <p>
-                                              Daily:{' '}
-                                              {week.totalDailyBodyScore.toFixed(
-                                                0
-                                              )}
+                                              Study/Work: {(week.totalStudyWorkHours ?? 0).toFixed(1)} hrs
                                             </p>
                                             <p>
-                                              Study/Work:{' '}
-                                              {week.studyWorkEffectiveScore.toFixed(
-                                                1
-                                              )}
+                                              Sleep on time: {week.daysWithSleep20 ?? 0} / 7 days
+                                            </p>
+                                            <p>
+                                              Wake on time: {week.daysWithWake20 ?? 0} / 7 days
                                             </p>
                                           </div>
                                         </div>
