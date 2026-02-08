@@ -484,6 +484,12 @@ export async function POST(req: NextRequest) {
     const daysWithJapa20 = dailyScores.filter(
       (score) => score.japaCompletionScore === 20
     ).length;
+    const daysWithSleep20 = dailyScores.filter(
+      (score) => score.sleepScore === 20
+    ).length;
+    const daysWithWake20 = dailyScores.filter(
+      (score) => score.wakeScore === 20
+    ).length;
 
     // Calculate effective scores
     const maxLectureMinutes = goals.maxHoursLectures * 60;
@@ -544,6 +550,8 @@ export async function POST(req: NextRequest) {
         totalStudyWorkHours,
         daysWithMp20,
         daysWithJapa20,
+        daysWithSleep20,
+        daysWithWake20,
       },
       create: {
         userId: session.user.id,
@@ -563,6 +571,8 @@ export async function POST(req: NextRequest) {
         totalStudyWorkHours,
         daysWithMp20,
         daysWithJapa20,
+        daysWithSleep20,
+        daysWithWake20,
       },
     });
 

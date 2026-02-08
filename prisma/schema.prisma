@@ -160,6 +160,8 @@ model WeeklySummary {
   totalStudyWorkHours  Float @default(0) // Total hours of study/work
   daysWithMp20         Int   @default(0) // Days in week with MP score = 20
   daysWithJapa20       Int   @default(0) // Days in week with Japa score = 20
+  daysWithSleep20      Int   @default(0) // Days in week with sleep score = 20
+  daysWithWake20       Int   @default(0) // Days in week with wake score = 20
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
