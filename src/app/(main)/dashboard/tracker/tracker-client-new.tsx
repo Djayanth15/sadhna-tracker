@@ -1719,6 +1719,13 @@ interface WeeklySummary {
   readingEffectiveScore: number;
   totalDailyBodyScore: number;
   studyWorkEffectiveScore: number;
+  totalLectureHours: number;
+  totalReadingHours: number;
+  totalStudyWorkHours: number;
+  daysWithMp20: number;
+  daysWithJapa20: number;
+  daysWithSleep20: number;
+  daysWithWake20: number;
 }
 
 interface WeeklySummaryWithUser extends WeeklySummary {
@@ -2261,6 +2268,63 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                             <p className='text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400'>
                               {week.overallAverage.toFixed(2)}%
                             </p>
+                          </div>
+                        </div>
+
+                        {/* Weekly Highlights */}
+                        <div className='mt-4 pt-4 border-t'>
+                          <p className='text-xs sm:text-sm font-medium text-muted-foreground mb-3'>
+                            Weekly Highlights
+                          </p>
+                          <div className='grid grid-cols-2 sm:grid-cols-3 gap-2'>
+                            <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                              <div className='text-xs'>
+                                <p className='text-muted-foreground'>Hours of Reading</p>
+                                <p className='font-semibold'>
+                                  {week.totalReadingHours.toFixed(1)}h
+                                </p>
+                              </div>
+                            </div>
+                            <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                              <div className='text-xs'>
+                                <p className='text-muted-foreground'>Hours of Listening</p>
+                                <p className='font-semibold'>
+                                  {week.totalLectureHours.toFixed(1)}h
+                                </p>
+                              </div>
+                            </div>
+                            <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                              <div className='text-xs'>
+                                <p className='text-muted-foreground'>MP Attended in Time</p>
+                                <p className='font-semibold'>
+                                  {week.daysWithMp20}/7 days
+                                </p>
+                              </div>
+                            </div>
+                            <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                              <div className='text-xs'>
+                                <p className='text-muted-foreground'>Japa Completed in Time</p>
+                                <p className='font-semibold'>
+                                  {week.daysWithJapa20}/7 days
+                                </p>
+                              </div>
+                            </div>
+                            <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                              <div className='text-xs'>
+                                <p className='text-muted-foreground'>Slept on Time</p>
+                                <p className='font-semibold'>
+                                  {week.daysWithSleep20}/7 days
+                                </p>
+                              </div>
+                            </div>
+                            <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                              <div className='text-xs'>
+                                <p className='text-muted-foreground'>Woke up on Time</p>
+                                <p className='font-semibold'>
+                                  {week.daysWithWake20}/7 days
+                                </p>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       </CardContent>

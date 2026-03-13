@@ -474,6 +474,24 @@ export async function POST(req: NextRequest) {
       0
     );
 
+    // Calculate raw hours and day counts
+    const totalLectureHours = totalLectureMinutes / 60;
+    const totalReadingHours = totalReadingMinutes / 60;
+    const totalStudyWorkHours = totalStudyWorkMinutes / 60;
+
+    const daysWithMp20 = dailyScores.filter(
+      (score) => score.mpAttendanceScore >= 20
+    ).length;
+    const daysWithJapa20 = dailyScores.filter(
+      (score) => score.japaCompletionScore >= 20
+    ).length;
+    const daysWithSleep20 = dailyScores.filter(
+      (score) => score.sleepScore >= 20
+    ).length;
+    const daysWithWake20 = dailyScores.filter(
+      (score) => score.wakeScore >= 20
+    ).length;
+
     // Calculate effective scores
     const maxLectureMinutes = goals.maxHoursLectures * 60;
     const maxReadingMinutes = goals.maxHoursReading * 60;
@@ -528,6 +546,13 @@ export async function POST(req: NextRequest) {
         totalBodyScore,
         overallAverage,
         daysRecorded: dailyScores.length,
+        totalLectureHours,
+        totalReadingHours,
+        totalStudyWorkHours,
+        daysWithMp20,
+        daysWithJapa20,
+        daysWithSleep20,
+        daysWithWake20,
       },
       create: {
         userId: session.user.id,
@@ -542,6 +567,13 @@ export async function POST(req: NextRequest) {
         totalBodyScore,
         overallAverage,
         daysRecorded: dailyScores.length,
+        totalLectureHours,
+        totalReadingHours,
+        totalStudyWorkHours,
+        daysWithMp20,
+        daysWithJapa20,
+        daysWithSleep20,
+        daysWithWake20,
       },
     });
 
