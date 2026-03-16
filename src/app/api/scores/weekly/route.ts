@@ -369,7 +369,6 @@
 import { getServerSession } from '@/lib/get-session';
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
-import { startOfWeek, endOfWeek, addDays } from 'date-fns';
 import { DailyScore } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
@@ -406,19 +405,27 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { weekStartDate } = body;
 
-    // Get Monday of the week (week starts on Monday)
-    const weekStart = startOfWeek(new Date(weekStartDate), { weekStartsOn: 1 });
-    // Get Sunday of the week (last day of the week)
-    const weekEnd = endOfWeek(new Date(weekStartDate), { weekStartsOn: 1 });
+    // weekStartDate is a "YYYY-MM-DD" date string (e.g. "2026-02-23") sent from
+    // the client. Parse as UTC midnight to ensure clean comparisons with
+    // @db.Date columns — avoids timezone-based mismatches where PostgreSQL
+    // casts date '2026-02-23' to '2026-02-23 00:00:00+00' and a non-UTC
+    // timestamp like '2026-02-23 05:00:00+00' (EST midnight) would fail >= check.
+    const weekStart = new Date(weekStartDate + 'T00:00:00.000Z');
+    // Sunday of the week (weekStart + 6 days)
+    const weekEnd = new Date(weekStartDate + 'T00:00:00.000Z');
+    weekEnd.setUTCDate(weekEnd.getUTCDate() + 6);
+    // First day of the NEXT week (weekStart + 7 days) — used as exclusive upper bound
+    const nextMonday = new Date(weekStartDate + 'T00:00:00.000Z');
+    nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
 
-    // Get all daily scores for this week
-    // Use gte and lt to get exactly 7 days (Monday through Sunday)
+    // Get all daily scores for this week using UTC date boundaries.
+    // This ensures correct comparison with @db.Date stored values.
     const dailyScores: DailyScore[] = await prisma.dailyScore.findMany({
       where: {
         userId: session.user.id,
         date: {
           gte: weekStart,
-          lt: addDays(weekStart, 7), // Strictly less than the 8th day (next Monday)
+          lt: nextMonday,
         },
       },
     });
