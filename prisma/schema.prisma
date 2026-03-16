@@ -84,14 +84,22 @@ model Verification {
 
 // Weekly goals set by user once
 model WeeklyGoals {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String  @unique
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   maxHoursLectures  Float // Max hours per week for listening to lectures
   maxHoursReading   Float // Max hours per week for book reading
   maxHoursStudyWork Float // Max hours per week for study/work
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  // Wake time goals (stored as "HH:MM" format)
+  wakeTime20Points  String? // Wake by this time for 20 points
+  wakeTime10Points  String? // Wake by this time for 10 points (0 after)
+
+  // Sleep time goals (stored as "HH:MM" format)
+  sleepTime20Points String? // Sleep by this time for 20 points
+  sleepTime10Points String? // Sleep by this time for 10 points (0 after)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("weekly_goals")
 }
@@ -153,6 +161,15 @@ model WeeklySummary {
 
   overallAverage Float // (totalSoulScore + totalBodyScore) / 2
   daysRecorded   Int // Number of days with entries
+
+  // Raw hours and day counts for display
+  totalLectureHours   Float @default(0) // Total hours of hearing lectures
+  totalReadingHours   Float @default(0) // Total hours of reading
+  totalStudyWorkHours Float @default(0) // Total hours of study/work
+  daysWithMp20        Int   @default(0) // Days in week with MP score = 20
+  daysWithJapa20      Int   @default(0) // Days in week with Japa score = 20
+  daysWithSleep20     Int   @default(0) // Days in week with sleep score = 20
+  daysWithWake20      Int   @default(0) // Days in week with wake score = 20
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

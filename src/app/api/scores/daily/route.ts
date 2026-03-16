@@ -18,11 +18,15 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Date is required' }, { status: 400 });
     }
 
+    // Parse as UTC midnight to match @db.Date storage convention
+    const dateObj = new Date(date.split('T')[0] + 'T00:00:00.000Z');
+
     const score = await prisma.dailyScore.findUnique({
       where: {
         userId_date: {
           userId: session.user.id,
-          date: new Date(date),
+          // date: new Date(date),
+          date: dateObj,
         },
       },
     });
@@ -68,8 +72,12 @@ export async function POST(req: NextRequest) {
       dailyBodyScore,
     } = body;
 
-    // Parse the date in the user's timezone to ensure correct date storage
-    const userDate = new Date(date + 'T00:00:00');
+    // // Parse the date in the user's timezone to ensure correct date storage
+    // const userDate = new Date(date + 'T00:00:00');
+
+    // Parse as UTC midnight — ensures the user's intended date is stored
+    // consistently as @db.Date regardless of the server's local timezone.
+    const userDate = new Date(date + 'T00:00:00.000Z');
 
     const score = await prisma.dailyScore.upsert({
       where: {
