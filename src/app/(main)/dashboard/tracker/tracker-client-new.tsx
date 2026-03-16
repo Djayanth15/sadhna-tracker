@@ -2563,6 +2563,63 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                           </p>
                                         </div>
                                       </div>
+
+                                      {/* Weekly Highlights */}
+                                      <div className='mt-3 pt-3 border-t'>
+                                        <p className='text-xs font-medium text-muted-foreground mb-2'>
+                                          Weekly Highlights
+                                        </p>
+                                        <div className='grid grid-cols-2 sm:grid-cols-3 gap-2'>
+                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                                            <div className='text-xs'>
+                                              <p className='text-muted-foreground'>Hours of Reading</p>
+                                              <p className='font-semibold'>
+                                                {week.totalReadingHours.toFixed(1)}h
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                                            <div className='text-xs'>
+                                              <p className='text-muted-foreground'>Hours of Listening</p>
+                                              <p className='font-semibold'>
+                                                {week.totalLectureHours.toFixed(1)}h
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                                            <div className='text-xs'>
+                                              <p className='text-muted-foreground'>MP Attended in Time</p>
+                                              <p className='font-semibold'>
+                                                {week.daysWithMp20}/7 days
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                                            <div className='text-xs'>
+                                              <p className='text-muted-foreground'>Japa Completed in Time</p>
+                                              <p className='font-semibold'>
+                                                {week.daysWithJapa20}/7 days
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                                            <div className='text-xs'>
+                                              <p className='text-muted-foreground'>Slept on Time</p>
+                                              <p className='font-semibold'>
+                                                {week.daysWithSleep20}/7 days
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
+                                            <div className='text-xs'>
+                                              <p className='text-muted-foreground'>Woke up on Time</p>
+                                              <p className='font-semibold'>
+                                                {week.daysWithWake20}/7 days
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
                                     </CardContent>
                                   </Card>
                                 ))}
