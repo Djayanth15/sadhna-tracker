@@ -864,6 +864,27 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                   .filter((r) => r.lastWeek)
                   .sort((a, b) => b.lastWeek!.overallAverage - a.lastWeek!.overallAverage);
 
+                const medals = ['🥇', '🥈', '🥉'];
+                const podiumColors = [
+                  // Gold
+                  'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700',
+                  // Silver
+                  'bg-slate-50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-600',
+                  // Bronze
+                  'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700',
+                ];
+                const podiumScoreColors = [
+                  'text-yellow-600 dark:text-yellow-400',
+                  'text-slate-500 dark:text-slate-400',
+                  'text-orange-500 dark:text-orange-400',
+                ];
+                const rankBadge = (idx: number) => {
+                  if (idx === 0) return <span className='text-base'>🥇</span>;
+                  if (idx === 1) return <span className='text-base'>🥈</span>;
+                  if (idx === 2) return <span className='text-base'>🥉</span>;
+                  return <span className='text-sm text-muted-foreground font-medium'>{idx + 1}</span>;
+                };
+
                 return (
                   <div className='space-y-4'>
                     {lastWeekRows.length === 0 ? (
@@ -884,12 +905,49 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                               )}
                             </span>
                             <span className='ml-2 text-xs'>
-                              (click a participant to see full history)
+                              (click a row to see full history)
                             </span>
                           </p>
                         )}
 
-                        {/* Leaderboard table */}
+                        {/* Top-3 podium */}
+                        {lastWeekRows.length >= 1 && (
+                          <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+                            {lastWeekRows.slice(0, 3).map(({ userName, lastWeek }, idx) => (
+                              <div
+                                key={userName}
+                                className={`relative rounded-xl border-2 p-4 ${podiumColors[idx]} ${idx === 0 ? 'sm:order-2' : idx === 1 ? 'sm:order-1' : 'sm:order-3'}`}
+                              >
+                                {/* Medal */}
+                                <div className='flex items-center justify-between mb-2'>
+                                  <span className='text-2xl'>{medals[idx]}</span>
+                                  {idx === 0 && (
+                                    <span className='text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'>
+                                      Champion
+                                    </span>
+                                  )}
+                                </div>
+                                <p className='font-bold text-base truncate'>{userName}</p>
+                                <p className={`text-2xl font-black mt-1 ${podiumScoreColors[idx]}`}>
+                                  {lastWeek!.overallAverage.toFixed(1)}%
+                                </p>
+                                <div className='flex gap-3 mt-2 text-xs text-muted-foreground'>
+                                  <span className='text-purple-600 dark:text-purple-400'>
+                                    Soul {lastWeek!.totalSoulScore.toFixed(1)}%
+                                  </span>
+                                  <span className='text-blue-600 dark:text-blue-400'>
+                                    Body {lastWeek!.totalBodyScore.toFixed(1)}%
+                                  </span>
+                                </div>
+                                <p className='text-xs text-muted-foreground mt-1'>
+                                  {lastWeek!.daysRecorded}/7 days
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Full leaderboard table */}
                         <Card>
                           <CardContent className='p-0 overflow-x-auto'>
                             <Table>
@@ -909,15 +967,23 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                   <>
                                     <TableRow
                                       key={userName}
-                                      className='cursor-pointer hover:bg-muted/50 transition-colors'
+                                      className={`cursor-pointer transition-colors ${
+                                        idx === 0
+                                          ? 'bg-yellow-50/60 dark:bg-yellow-900/10 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/20'
+                                          : idx === 1
+                                          ? 'bg-slate-50/60 dark:bg-slate-800/20 hover:bg-slate-100/60 dark:hover:bg-slate-800/30'
+                                          : idx === 2
+                                          ? 'bg-orange-50/60 dark:bg-orange-900/10 hover:bg-orange-100/60 dark:hover:bg-orange-900/20'
+                                          : 'hover:bg-muted/50'
+                                      }`}
                                       onClick={() =>
                                         setExpandedWeeklyUser(
                                           expandedWeeklyUser === userName ? null : userName
                                         )
                                       }
                                     >
-                                      <TableCell className='text-center text-muted-foreground font-medium'>
-                                        {idx + 1}
+                                      <TableCell className='text-center'>
+                                        {rankBadge(idx)}
                                       </TableCell>
                                       <TableCell className='font-medium'>{userName}</TableCell>
                                       <TableCell className='text-center text-purple-600 dark:text-purple-400 font-semibold'>
@@ -926,7 +992,12 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                                       <TableCell className='text-center text-blue-600 dark:text-blue-400 font-semibold'>
                                         {lastWeek!.totalBodyScore.toFixed(1)}%
                                       </TableCell>
-                                      <TableCell className='text-center text-green-600 dark:text-green-400 font-bold'>
+                                      <TableCell className={`text-center font-bold ${
+                                        idx === 0 ? 'text-yellow-600 dark:text-yellow-400' :
+                                        idx === 1 ? 'text-slate-500 dark:text-slate-400' :
+                                        idx === 2 ? 'text-orange-500 dark:text-orange-400' :
+                                        'text-green-600 dark:text-green-400'
+                                      }`}>
                                         {lastWeek!.overallAverage.toFixed(1)}%
                                       </TableCell>
                                       <TableCell className='text-center text-muted-foreground text-sm'>
