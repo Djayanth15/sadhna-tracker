@@ -43,6 +43,11 @@ export const auth = betterAuth({
         type: 'string',
         input: false,
       },
+      bys: {
+        type: 'boolean',
+        input: false,
+        defaultValue: false,
+      },
     },
   },
   hooks: {
