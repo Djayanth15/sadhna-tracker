@@ -21,6 +21,8 @@ import {
   BarChart3,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import {
   format,
@@ -113,6 +115,7 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
     'entry'
   );
   const [adminView, setAdminView] = useState<'daily' | 'weekly'>('daily');
+  const [expandedWeeklyUser, setExpandedWeeklyUser] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [allUsersScores, setAllUsersScores] = useState<DailyScore[]>([]);
   const [allUsersWeeklyScores, setAllUsersWeeklyScores] = useState<
@@ -837,193 +840,226 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                 </div>
               )}
 
-              {adminView === 'weekly' && (
-                <div className='space-y-4 sm:space-y-6'>
-                  {Object.keys(groupWeeklyScoresByUser()).length === 0 ? (
-                    <p className='text-sm text-muted-foreground text-center py-8'>
-                      No weekly scores calculated yet
-                    </p>
-                  ) : (
-                    Object.entries(groupWeeklyScoresByUser()).map(
-                      ([userName, weeks]) => (
-                        <Card key={userName}>
-                          <CardHeader className='bg-primary text-primary-foreground p-4'>
-                            <CardTitle className='text-sm sm:text-base'>
-                              {userName}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className='p-4 sm:pt-6'>
-                            <div className='space-y-3 sm:space-y-4'>
-                              {weeks
-                                .sort(
-                                  (a, b) =>
-                                    new Date(b.weekStart).getTime() -
-                                    new Date(a.weekStart).getTime()
-                                )
-                                .map((week) => (
-                                  <Card key={week.id} className='border-2'>
-                                    <CardHeader className='bg-muted p-3 sm:p-4'>
-                                      <CardTitle className='text-sm sm:text-base'>
-                                        {format(
-                                          parseLocalDate(week.weekStart),
-                                          'MMM d'
-                                        )}{' '}
-                                        -{' '}
-                                        {format(
-                                          parseLocalDate(week.weekEnd),
-                                          'MMM d, yyyy'
-                                        )}
-                                      </CardTitle>
-                                      <p className='text-xs sm:text-sm text-muted-foreground'>
-                                        {week.daysRecorded} days recorded
-                                      </p>
-                                    </CardHeader>
-                                    <CardContent className='p-3 sm:p-4'>
-                                      <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
-                                        <div className='p-3 bg-purple-50 dark:bg-purple-950/30 rounded-lg'>
-                                          <p className='text-xs text-muted-foreground mb-1'>
-                                            Soul Score
-                                          </p>
-                                          <p className='text-lg sm:text-xl font-bold text-purple-600 dark:text-purple-400'>
-                                            {week.totalSoulScore.toFixed(2)}%
-                                          </p>
-                                          <div className='text-xs mt-1 space-y-0.5'>
-                                            <p>
-                                              MP+Japa:{' '}
-                                              {week.totalMpJapaScore.toFixed(0)}
-                                            </p>
-                                            <p>
-                                              Lectures:{' '}
-                                              {week.lectureEffectiveScore.toFixed(
-                                                1
-                                              )}
-                                            </p>
-                                            <p>
-                                              Reading:{' '}
-                                              {week.readingEffectiveScore.toFixed(
-                                                1
-                                              )}
-                                            </p>
-                                          </div>
-                                        </div>
+              {adminView === 'weekly' && (() => {
+                const grouped = groupWeeklyScoresByUser();
+                // Find the most recent week across all users
+                const latestWeekStart = allUsersWeeklyScores.length > 0
+                  ? allUsersWeeklyScores.reduce((latest, s) =>
+                      new Date(s.weekStart) > new Date(latest) ? s.weekStart : latest,
+                      allUsersWeeklyScores[0].weekStart
+                    )
+                  : null;
 
-                                        <div className='p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg'>
-                                          <p className='text-xs text-muted-foreground mb-1'>
-                                            Body Score
-                                          </p>
-                                          <p className='text-lg sm:text-xl font-bold text-blue-600 dark:text-blue-400'>
-                                            {week.totalBodyScore.toFixed(2)}%
-                                          </p>
-                                          <div className='text-xs mt-1 space-y-0.5'>
-                                            <p>
-                                              Daily:{' '}
-                                              {week.totalDailyBodyScore.toFixed(
-                                                0
-                                              )}
-                                            </p>
-                                            <p>
-                                              Study/Work:{' '}
-                                              {week.studyWorkEffectiveScore.toFixed(
-                                                1
-                                              )}
-                                            </p>
-                                          </div>
-                                        </div>
+                // Build last-week scores per user (sorted by overall desc)
+                const lastWeekRows = Object.entries(grouped)
+                  .map(([userName, weeks]) => {
+                    const sorted = [...weeks].sort(
+                      (a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime()
+                    );
+                    const lastWeek = latestWeekStart
+                      ? sorted.find((w) => w.weekStart === latestWeekStart) ?? sorted[0]
+                      : sorted[0];
+                    return { userName, lastWeek, allWeeks: sorted, userId: lastWeek?.user?.id };
+                  })
+                  .filter((r) => r.lastWeek)
+                  .sort((a, b) => b.lastWeek!.overallAverage - a.lastWeek!.overallAverage);
 
-                                        <div className='p-3 bg-green-50 dark:bg-green-950/30 rounded-lg'>
-                                          <p className='text-xs text-muted-foreground mb-1'>
-                                            Overall
-                                          </p>
-                                          <p className='text-lg sm:text-xl font-bold text-green-600 dark:text-green-400'>
-                                            {week.overallAverage.toFixed(2)}%
-                                          </p>
-                                        </div>
-                                      </div>
-                                      {/* Weekly Highlights */}
-                                      <div className='mt-4 pt-4 border-t'>
-                                        <p className='text-xs sm:text-sm font-medium text-muted-foreground mb-3'>
-                                          Weekly Highlights
-                                        </p>
-                                        <div className='grid grid-cols-2 sm:grid-cols-3 gap-2'>
-                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
-                                            <div className='text-xs'>
-                                              <p className='text-muted-foreground'>
-                                                Hours of Reading
-                                              </p>
-                                              <p className='font-semibold'>
-                                                {week.totalReadingHours.toFixed(
-                                                  1
-                                                )}
-                                                h
-                                              </p>
+                const medals = ['🥇', '🥈', '🥉'];
+                const podiumColors = [
+                  // Gold
+                  'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700',
+                  // Silver
+                  'bg-slate-50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-600',
+                  // Bronze
+                  'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700',
+                ];
+                const podiumScoreColors = [
+                  'text-yellow-600 dark:text-yellow-400',
+                  'text-slate-500 dark:text-slate-400',
+                  'text-orange-500 dark:text-orange-400',
+                ];
+                const rankBadge = (idx: number) => {
+                  if (idx === 0) return <span className='text-base'>🥇</span>;
+                  if (idx === 1) return <span className='text-base'>🥈</span>;
+                  if (idx === 2) return <span className='text-base'>🥉</span>;
+                  return <span className='text-sm text-muted-foreground font-medium'>{idx + 1}</span>;
+                };
+
+                return (
+                  <div className='space-y-4'>
+                    {lastWeekRows.length === 0 ? (
+                      <p className='text-sm text-muted-foreground text-center py-8'>
+                        No weekly scores calculated yet
+                      </p>
+                    ) : (
+                      <>
+                        {/* Last week header */}
+                        {latestWeekStart && (
+                          <p className='text-sm text-muted-foreground px-1'>
+                            Last week:{' '}
+                            <span className='font-medium text-foreground'>
+                              {format(parseLocalDate(latestWeekStart), 'MMM d')} –{' '}
+                              {format(
+                                addDays(parseLocalDate(latestWeekStart), 6),
+                                'MMM d, yyyy'
+                              )}
+                            </span>
+                            <span className='ml-2 text-xs'>
+                              (click a row to see full history)
+                            </span>
+                          </p>
+                        )}
+
+                        {/* Top-3 podium */}
+                        {lastWeekRows.length >= 1 && (
+                          <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+                            {lastWeekRows.slice(0, 3).map(({ userName, lastWeek }, idx) => (
+                              <div
+                                key={userName}
+                                className={`relative rounded-xl border-2 p-4 ${podiumColors[idx]} ${idx === 0 ? 'sm:order-2' : idx === 1 ? 'sm:order-1' : 'sm:order-3'}`}
+                              >
+                                {/* Medal */}
+                                <div className='flex items-center justify-between mb-2'>
+                                  <span className='text-2xl'>{medals[idx]}</span>
+                                  {idx === 0 && (
+                                    <span className='text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'>
+                                      Champion
+                                    </span>
+                                  )}
+                                </div>
+                                <p className='font-bold text-base truncate'>{userName}</p>
+                                <p className={`text-2xl font-black mt-1 ${podiumScoreColors[idx]}`}>
+                                  {lastWeek!.overallAverage.toFixed(1)}%
+                                </p>
+                                <div className='flex gap-3 mt-2 text-xs text-muted-foreground'>
+                                  <span className='text-purple-600 dark:text-purple-400'>
+                                    Soul {lastWeek!.totalSoulScore.toFixed(1)}%
+                                  </span>
+                                  <span className='text-blue-600 dark:text-blue-400'>
+                                    Body {lastWeek!.totalBodyScore.toFixed(1)}%
+                                  </span>
+                                </div>
+                                <p className='text-xs text-muted-foreground mt-1'>
+                                  {lastWeek!.daysRecorded}/7 days
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Full leaderboard table */}
+                        <Card>
+                          <CardContent className='p-0 overflow-x-auto'>
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead className='w-10 text-center'>#</TableHead>
+                                  <TableHead>Participant</TableHead>
+                                  <TableHead className='text-center text-purple-600 dark:text-purple-400'>Soul</TableHead>
+                                  <TableHead className='text-center text-blue-600 dark:text-blue-400'>Body</TableHead>
+                                  <TableHead className='text-center text-green-600 dark:text-green-400'>Overall</TableHead>
+                                  <TableHead className='text-center'>Days</TableHead>
+                                  <TableHead className='w-8'></TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {lastWeekRows.map(({ userName, lastWeek, allWeeks, userId }, idx) => (
+                                  <>
+                                    <TableRow
+                                      key={userName}
+                                      className={`cursor-pointer transition-colors ${
+                                        idx === 0
+                                          ? 'bg-yellow-50/60 dark:bg-yellow-900/10 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/20'
+                                          : idx === 1
+                                          ? 'bg-slate-50/60 dark:bg-slate-800/20 hover:bg-slate-100/60 dark:hover:bg-slate-800/30'
+                                          : idx === 2
+                                          ? 'bg-orange-50/60 dark:bg-orange-900/10 hover:bg-orange-100/60 dark:hover:bg-orange-900/20'
+                                          : 'hover:bg-muted/50'
+                                      }`}
+                                      onClick={() =>
+                                        setExpandedWeeklyUser(
+                                          expandedWeeklyUser === userName ? null : userName
+                                        )
+                                      }
+                                    >
+                                      <TableCell className='text-center'>
+                                        {rankBadge(idx)}
+                                      </TableCell>
+                                      <TableCell className='font-medium'>{userName}</TableCell>
+                                      <TableCell className='text-center text-purple-600 dark:text-purple-400 font-semibold'>
+                                        {lastWeek!.totalSoulScore.toFixed(1)}%
+                                      </TableCell>
+                                      <TableCell className='text-center text-blue-600 dark:text-blue-400 font-semibold'>
+                                        {lastWeek!.totalBodyScore.toFixed(1)}%
+                                      </TableCell>
+                                      <TableCell className={`text-center font-bold ${
+                                        idx === 0 ? 'text-yellow-600 dark:text-yellow-400' :
+                                        idx === 1 ? 'text-slate-500 dark:text-slate-400' :
+                                        idx === 2 ? 'text-orange-500 dark:text-orange-400' :
+                                        'text-green-600 dark:text-green-400'
+                                      }`}>
+                                        {lastWeek!.overallAverage.toFixed(1)}%
+                                      </TableCell>
+                                      <TableCell className='text-center text-muted-foreground text-sm'>
+                                        {lastWeek!.daysRecorded}/7
+                                      </TableCell>
+                                      <TableCell>
+                                        {expandedWeeklyUser === userName
+                                          ? <ChevronUp className='h-4 w-4 text-muted-foreground' />
+                                          : <ChevronDown className='h-4 w-4 text-muted-foreground' />
+                                        }
+                                      </TableCell>
+                                    </TableRow>
+
+                                    {/* Expanded history */}
+                                    {expandedWeeklyUser === userName && (
+                                      <TableRow key={`${userName}-expanded`}>
+                                        <TableCell colSpan={7} className='p-0 bg-muted/20'>
+                                          <div className='p-4 space-y-3'>
+                                            <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wide'>
+                                              Full History – {userName}
+                                            </p>
+                                            <div className='space-y-2'>
+                                              {allWeeks.map((week) => (
+                                                <div
+                                                  key={week.id}
+                                                  className='flex flex-wrap items-center gap-3 p-3 bg-background rounded-lg border text-sm'
+                                                >
+                                                  <span className='font-medium w-36 shrink-0'>
+                                                    {format(parseLocalDate(week.weekStart), 'MMM d')}
+                                                    {' – '}
+                                                    {format(parseLocalDate(week.weekEnd), 'MMM d, yyyy')}
+                                                  </span>
+                                                  <span className='text-purple-600 dark:text-purple-400'>
+                                                    Soul: {week.totalSoulScore.toFixed(1)}%
+                                                  </span>
+                                                  <span className='text-blue-600 dark:text-blue-400'>
+                                                    Body: {week.totalBodyScore.toFixed(1)}%
+                                                  </span>
+                                                  <span className='text-green-600 dark:text-green-400 font-semibold'>
+                                                    Overall: {week.overallAverage.toFixed(1)}%
+                                                  </span>
+                                                  <span className='text-muted-foreground text-xs ml-auto'>
+                                                    {week.daysRecorded}/7 days
+                                                  </span>
+                                                </div>
+                                              ))}
                                             </div>
                                           </div>
-                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
-                                            <div className='text-xs'>
-                                              <p className='text-muted-foreground'>
-                                                Hours of Listening
-                                              </p>
-                                              <p className='font-semibold'>
-                                                {week.totalLectureHours.toFixed(
-                                                  1
-                                                )}
-                                                h
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
-                                            <div className='text-xs'>
-                                              <p className='text-muted-foreground'>
-                                                MP Attended in Time
-                                              </p>
-                                              <p className='font-semibold'>
-                                                {week.daysWithMp20}/7 days
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
-                                            <div className='text-xs'>
-                                              <p className='text-muted-foreground'>
-                                                Japa Completed in Time
-                                              </p>
-                                              <p className='font-semibold'>
-                                                {week.daysWithJapa20}/7 days
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
-                                            <div className='text-xs'>
-                                              <p className='text-muted-foreground'>
-                                                Slept on Time
-                                              </p>
-                                              <p className='font-semibold'>
-                                                {week.daysWithSleep20}/7 days
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <div className='flex items-center gap-2 p-2 bg-muted/50 rounded-md'>
-                                            <div className='text-xs'>
-                                              <p className='text-muted-foreground'>
-                                                Woke up on Time
-                                              </p>
-                                              <p className='font-semibold'>
-                                                {week.daysWithWake20}/7 days
-                                              </p>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
+                                        </TableCell>
+                                      </TableRow>
+                                    )}
+                                  </>
                                 ))}
-                            </div>
+                              </TableBody>
+                            </Table>
                           </CardContent>
                         </Card>
-                      )
-                    )
-                  )}
-                </div>
-              )}
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </CardContent>
