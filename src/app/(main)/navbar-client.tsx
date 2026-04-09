@@ -41,6 +41,18 @@ export function NavbarClient({ user }: NavbarProps) {
           >
             Tracker
           </Link>
+          <Link
+            href='/leaderboard'
+            className='text-sm font-medium text-muted-foreground hover:text-foreground transition-colors'
+          >
+            Leaderboard
+          </Link>
+          <Link
+            href={`/analysis/${user.id}`}
+            className='text-sm font-medium text-muted-foreground hover:text-foreground transition-colors'
+          >
+            My Analysis
+          </Link>
           {user.role === 'admin' && (
             <>
               <Link
@@ -100,6 +112,20 @@ export function NavbarClient({ user }: NavbarProps) {
               onClick={() => setMobileMenuOpen(false)}
             >
               Tracker
+            </Link>
+            <Link
+              href='/leaderboard'
+              className='px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors'
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Leaderboard
+            </Link>
+            <Link
+              href={`/analysis/${user.id}`}
+              className='px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors'
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              My Analysis
             </Link>
             {user.role === 'admin' && (
               <>
