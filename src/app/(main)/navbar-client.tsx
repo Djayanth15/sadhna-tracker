@@ -41,6 +41,22 @@ export function NavbarClient({ user }: NavbarProps) {
           >
             Tracker
           </Link>
+          {user.role === 'admin' && (
+            <>
+              <Link
+                href='/admin/participants'
+                className='text-sm font-medium text-muted-foreground hover:text-foreground transition-colors'
+              >
+                Participants
+              </Link>
+              <Link
+                href='/admin'
+                className='text-sm font-medium text-muted-foreground hover:text-foreground transition-colors'
+              >
+                Admin
+              </Link>
+            </>
+          )}
         </nav>
 
         {/* Desktop Actions */}
@@ -85,6 +101,24 @@ export function NavbarClient({ user }: NavbarProps) {
             >
               Tracker
             </Link>
+            {user.role === 'admin' && (
+              <>
+                <Link
+                  href='/admin/participants'
+                  className='px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors'
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Participants
+                </Link>
+                <Link
+                  href='/admin'
+                  className='px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors'
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Admin
+                </Link>
+              </>
+            )}
             <div className='pt-2 border-t mt-2'>
               <div className='px-3 py-2'>
                 <UserDropdown user={user} />

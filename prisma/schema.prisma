@@ -20,6 +20,7 @@ model User {
   emailVerified   Boolean         @default(false)
   image           String?
   role            String?         @default("user") // "user" or "admin"
+  bys             Boolean         @default(false) // "be your self" participant flag
   createdAt       DateTime        @default(now())
   updatedAt       DateTime        @updatedAt
   sessions        Session[]
