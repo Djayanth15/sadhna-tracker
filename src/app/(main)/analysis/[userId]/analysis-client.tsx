@@ -25,6 +25,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
+  type ValueType,
 } from 'recharts';
 import { User } from '@/lib/auth';
 
@@ -455,7 +456,7 @@ function ChartsSection({ weeklySummaries }: { weeklySummaries: WeeklySummary[] }
             <CartesianGrid strokeDasharray='3 3' className='stroke-muted' />
             <XAxis dataKey='label' tick={{ fontSize: 11 }} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit='%' />
-            <Tooltip formatter={(v: number | string) => `${v}%`} />
+            <Tooltip formatter={(v: ValueType) => `${v}%`} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Line
               type='monotone'
@@ -490,7 +491,7 @@ function ChartsSection({ weeklySummaries }: { weeklySummaries: WeeklySummary[] }
             <CartesianGrid strokeDasharray='3 3' className='stroke-muted' />
             <XAxis dataKey='label' tick={{ fontSize: 11 }} />
             <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit='%' />
-            <Tooltip formatter={(v: number | string) => `${v}%`} />
+            <Tooltip formatter={(v: ValueType) => `${v}%`} />
             <Legend wrapperStyle={{ fontSize: 12 }} />
             <Bar dataKey='Soul' fill='#9333ea' radius={[3, 3, 0, 0]} />
             <Bar dataKey='Body' fill='#3b82f6' radius={[3, 3, 0, 0]} />
