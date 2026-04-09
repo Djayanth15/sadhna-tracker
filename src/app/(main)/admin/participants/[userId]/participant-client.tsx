@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -361,9 +362,16 @@ export function ParticipantClient({ userId }: { userId: string }) {
         </Button>
       </div>
 
-      <div className='space-y-1'>
-        <h1 className='text-xl sm:text-2xl font-semibold'>{user.name}</h1>
-        <p className='text-muted-foreground text-sm'>{user.email}</p>
+      <div className='flex items-start justify-between'>
+        <div className='space-y-1'>
+          <h1 className='text-xl sm:text-2xl font-semibold'>{user.name}</h1>
+          <p className='text-muted-foreground text-sm'>{user.email}</p>
+        </div>
+        <Link href={`/analysis/${user.id}`}>
+          <Button variant='outline' size='sm' className='text-xs'>
+            Full Analysis
+          </Button>
+        </Link>
       </div>
 
       {/* Summary stats */}

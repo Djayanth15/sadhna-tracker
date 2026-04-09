@@ -42,6 +42,15 @@ export default async function AdminPage() {
               Daily and weekly scores overview for all users.
             </p>
           </Link>
+          <Link
+            href='/leaderboard'
+            className='block p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors'
+          >
+            <p className='font-semibold'>Leaderboard</p>
+            <p className='text-sm text-muted-foreground mt-1'>
+              Weekly rankings for all participants with top 3 highlighted.
+            </p>
+          </Link>
         </div>
       </div>
     </main>
