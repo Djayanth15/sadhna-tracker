@@ -27,6 +27,40 @@ export async function GET(req: NextRequest) {
   }
 }
 
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await getServerSession();
+
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { weekId, explanation } = body;
+
+    if (!weekId || typeof explanation !== 'string') {
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
+    }
+
+    const updated = await prisma.weeklySummary.updateMany({
+      where: { id: weekId, userId: session.user.id },
+      data: { explanation },
+    });
+
+    if (updated.count === 0) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('Failed to save explanation:', error);
+    return NextResponse.json(
+      { error: 'Failed to save explanation' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession();
