@@ -62,8 +62,10 @@ function ScoreBadge({ value }: { value: number }) {
 export function Leaderboard({ currentUserId }: LeaderboardProps) {
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(false);
+  const lastWeek = getMondayOfWeek(addDays(new Date(), -7));
+
   const [weekStart, setWeekStart] = useState<Date>(() =>
-    getMondayOfWeek(new Date())
+    getMondayOfWeek(addDays(new Date(), -7))
   );
 
   const today = getMondayOfWeek(new Date());
@@ -95,6 +97,7 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
     });
   };
 
+  const isLastWeek = weekStart.getTime() === lastWeek.getTime();
   const isCurrentWeek = weekStart.getTime() === today.getTime();
 
   const activeEntries = entries.filter((e) => e.weekScore !== null);
@@ -117,7 +120,7 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
         <div className='text-center flex-1 sm:flex-none'>
           <p className='text-sm font-medium'>{formatWeekRange(weekStart)}</p>
           <p className='text-xs text-muted-foreground'>
-            {isCurrentWeek ? 'This week' : 'Weekly scores'}
+            {isLastWeek ? 'Last week' : isCurrentWeek ? 'This week' : 'Weekly scores'}
           </p>
         </div>
 
@@ -125,7 +128,7 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
           variant='outline'
           size='sm'
           onClick={() => navigateWeek('next')}
-          disabled={isCurrentWeek}
+          disabled={isLastWeek}
           className='flex-1 sm:flex-none'
         >
           <span className='hidden sm:inline'>Next</span>
@@ -133,14 +136,14 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
         </Button>
       </div>
 
-      {!isCurrentWeek && (
+      {!isLastWeek && (
         <Button
           variant='ghost'
           size='sm'
           className='w-full text-xs'
-          onClick={() => setWeekStart(today)}
+          onClick={() => setWeekStart(lastWeek)}
         >
-          Back to current week
+          Back to last week
         </Button>
       )}
 
