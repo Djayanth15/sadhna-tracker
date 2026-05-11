@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { User } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,7 @@ import {
   ChevronRight,
   ChevronDown,
   ChevronUp,
+  Users,
 } from 'lucide-react';
 import {
   format,
@@ -104,7 +106,14 @@ const parseLocalDate = (isoString: string) => {
   return new Date(year, month - 1, day);
 };
 
+interface ScorePopup {
+  weekId: string;
+  soulScore: number;
+  bodyScore: number;
+}
+
 export function TrackerClientNew({ user }: TrackerClientProps) {
+  const router = useRouter();
   const [goals, setGoals] = useState<WeeklyGoals | null>(null);
   const [dailyScores, setDailyScores] = useState<DailyScore[]>([]);
   const [weeklyScores, setWeeklyScores] = useState<WeeklySummary[]>([]);
@@ -126,6 +135,9 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
   const [allParticipants, setAllParticipants] = useState<
     { id: string; name: string; email: string }[]
   >([]);
+  const [scorePopup, setScorePopup] = useState<ScorePopup | null>(null);
+  const [explanation, setExplanation] = useState('');
+  const [savingExplanation, setSavingExplanation] = useState(false);
 
   const isAdmin = user.role === 'admin';
 
@@ -246,19 +258,22 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
       const weekStart = startOfWeek(new Date(selectedDate), {
         weekStartsOn: 1,
       });
-      // Send date as YYYY-MM-DD string to avoid timezone shift issues
-      // when the server parses the ISO timestamp
       const weekStartStr = format(weekStart, 'yyyy-MM-dd');
       const response = await fetch('/api/scores/weekly', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          weekStartDate: weekStartStr,
-        }),
+        body: JSON.stringify({ weekStartDate: weekStartStr }),
       });
 
       if (response.ok) {
+        const summary = await response.json();
         await fetchWeeklyScores();
+        setExplanation('');
+        setScorePopup({
+          weekId: summary.id,
+          soulScore: summary.totalSoulScore,
+          bodyScore: summary.totalBodyScore,
+        });
       } else {
         const error = await response.json();
         alert(error.error || 'Failed to calculate weekly score');
@@ -269,6 +284,28 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePopupClose = async () => {
+    if (!scorePopup) return;
+    const needsExplanation =
+      scorePopup.soulScore < 80 || scorePopup.bodyScore < 80;
+    if (needsExplanation && explanation.trim()) {
+      setSavingExplanation(true);
+      try {
+        await fetch('/api/scores/weekly', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ weekId: scorePopup.weekId, explanation }),
+        });
+      } catch (e) {
+        console.error('Failed to save explanation:', e);
+      } finally {
+        setSavingExplanation(false);
+      }
+    }
+    setScorePopup(null);
+    setExplanation('');
   };
 
   const getCurrentWeekDays = () => {
@@ -736,615 +773,118 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
             </div>
           )}
 
-          {/* Admin View - Mobile Optimized */}
+          {/* Admin View - Participants List */}
           {view === 'admin' && isAdmin && (
-            <div className='space-y-4 sm:space-y-6'>
-              <div className='flex gap-2 overflow-x-auto pb-2'>
-                <Button
-                  onClick={() => setAdminView('daily')}
-                  variant={adminView === 'daily' ? 'default' : 'outline'}
-                  size='sm'
-                  className='flex-shrink-0'
-                >
-                  Daily Scores
-                </Button>
-                <Button
-                  onClick={() => setAdminView('weekly')}
-                  variant={adminView === 'weekly' ? 'default' : 'outline'}
-                  size='sm'
-                  className='flex-shrink-0'
-                >
-                  Weekly Scores
-                </Button>
+            <div className='space-y-4'>
+              <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                <Users className='h-4 w-4' />
+                <span>
+                  {allParticipants.length} participant
+                  {allParticipants.length !== 1 ? 's' : ''}
+                </span>
               </div>
 
-              {adminView === 'daily' && (
-                <div className='space-y-4 sm:space-y-6'>
-                  {Object.keys(groupScoresByUser()).length === 0 ? (
-                    <p className='text-sm text-muted-foreground text-center py-8'>
-                      No user data available
-                    </p>
-                  ) : (
-                    Object.entries(groupScoresByUser()).map(
-                      ([userName, scores]) => (
-                        <Card key={userName}>
-                          <CardHeader className='bg-primary text-primary-foreground p-4'>
-                            <CardTitle className='text-sm sm:text-base'>
-                              {userName}
-                            </CardTitle>
-                          </CardHeader>
-                          <CardContent className='p-0 sm:pt-6'>
-                            {/* Mobile: Card Layout */}
-                            <div className='block sm:hidden divide-y'>
-                              {scores
-                                .sort(
-                                  (a, b) =>
-                                    new Date(b.date).getTime() -
-                                    new Date(a.date).getTime()
-                                )
-                                .slice(0, 10)
-                                .map((score) => (
-                                  <div key={score.id} className='p-4 space-y-2'>
-                                    <p className='font-medium text-sm'>
-                                      {format(
-                                        parseLocalDate(score.date),
-                                        'MMM d, yyyy'
-                                      )}
-                                    </p>
-                                    <div className='flex gap-4 text-sm'>
-                                      <span className='text-purple-600 dark:text-purple-400 font-semibold'>
-                                        Soul: {score.dailySoulScore.toFixed(1)}
-                                      </span>
-                                      <span className='text-blue-600 dark:text-blue-400 font-semibold'>
-                                        Body: {score.dailyBodyScore.toFixed(1)}
-                                      </span>
-                                    </div>
-                                    <p className='text-xs text-muted-foreground'>
-                                      MP: {score.mpAttendanceScore} | Japa:{' '}
-                                      {score.japaCompletionScore} | Sleep:{' '}
-                                      {score.sleepScore}
-                                    </p>
-                                  </div>
-                                ))}
-                            </div>
-
-                            {/* Desktop: Table */}
-                            <div className='hidden sm:block overflow-x-auto'>
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Soul Score</TableHead>
-                                    <TableHead>Body Score</TableHead>
-                                    <TableHead>Details</TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {scores
-                                    .sort(
-                                      (a, b) =>
-                                        new Date(b.date).getTime() -
-                                        new Date(a.date).getTime()
-                                    )
-                                    .slice(0, 10)
-                                    .map((score) => (
-                                      <TableRow key={score.id}>
-                                        <TableCell>
-                                          {format(
-                                            parseLocalDate(score.date),
-                                            'MMM d, yyyy'
-                                          )}
-                                        </TableCell>
-                                        <TableCell className='text-purple-600 dark:text-purple-400 font-semibold'>
-                                          {score.dailySoulScore.toFixed(1)}
-                                        </TableCell>
-                                        <TableCell className='text-blue-600 dark:text-blue-400 font-semibold'>
-                                          {score.dailyBodyScore.toFixed(1)}
-                                        </TableCell>
-                                        <TableCell className='text-xs text-muted-foreground'>
-                                          MP: {score.mpAttendanceScore} | Japa:{' '}
-                                          {score.japaCompletionScore} | Sleep:{' '}
-                                          {score.sleepScore}
-                                        </TableCell>
-                                      </TableRow>
-                                    ))}
-                                </TableBody>
-                              </Table>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )
-                    )
-                  )}
+              {allParticipants.length === 0 ? (
+                <p className='text-sm text-muted-foreground text-center py-8'>
+                  No participants found.
+                </p>
+              ) : (
+                <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
+                  {allParticipants.map((participant) => (
+                    <button
+                      key={participant.id}
+                      onClick={() =>
+                        router.push(`/admin/participants/${participant.id}`)
+                      }
+                      className='flex items-center gap-3 p-4 rounded-lg border bg-card hover:bg-muted/50 hover:border-primary/40 transition-colors text-left w-full'
+                    >
+                      <div className='flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm'>
+                        {participant.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className='min-w-0'>
+                        <p className='font-medium text-sm truncate'>
+                          {participant.name}
+                        </p>
+                        <p className='text-xs text-muted-foreground truncate'>
+                          {participant.email}
+                        </p>
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
-
-              {adminView === 'weekly' &&
-                (() => {
-                  const grouped = groupWeeklyScoresByUser();
-                  // Find the most recent week across all users
-                  // Find the most recent week across all weekly scores
-                  const latestWeekStart =
-                    allUsersWeeklyScores.length > 0
-                      ? allUsersWeeklyScores.reduce(
-                          (latest, s) =>
-                            new Date(s.weekStart) > new Date(latest)
-                              ? s.weekStart
-                              : latest,
-                          allUsersWeeklyScores[0].weekStart
-                        )
-                      : null;
-
-                  // // Build last-week scores per user (sorted by overall desc)
-                  // const lastWeekRows = Object.entries(grouped)
-                  // Build submitted rows: participant has a weekly score for the latest week
-                  const submittedRows = Object.entries(grouped)
-                    .map(([userName, weeks]) => {
-                      const sorted = [...weeks].sort(
-                        (a, b) =>
-                          new Date(b.weekStart).getTime() -
-                          new Date(a.weekStart).getTime()
-                      );
-                      const lastWeek = latestWeekStart
-                        ? //     ? (sorted.find(
-                          //         (w) => w.weekStart === latestWeekStart
-                          //       ) ?? sorted[0])
-                          //     : sorted[0];
-                          //   return {
-                          //     userName,
-                          //     lastWeek,
-                          //     allWeeks: sorted,
-                          //     userId: lastWeek?.user?.id,
-                          //   };
-                          // })
-                          sorted.find((w) => w.weekStart === latestWeekStart)
-                        : undefined;
-                      return { userName, lastWeek, allWeeks: sorted };
-                    })
-
-                    .filter((r) => !!r.lastWeek)
-                    .sort(
-                      (a, b) =>
-                        b.lastWeek!.overallAverage - a.lastWeek!.overallAverage
-                    );
-
-                  // Submitted user names (for quick lookup)
-                  const submittedNames = new Set(
-                    submittedRows.map((r) => r.userName)
-                  );
-
-                  // Non-submitted participants: bys=true but no score for this week
-                  // Also include any participants with past weeks but not this week
-                  const allParticipantNames = new Set(
-                    allParticipants.map((p) => p.name)
-                  );
-                  // Users with any weekly history but not the latest week
-                  const historicButNotThisWeek = Object.entries(grouped)
-                    .filter(([name]) => !submittedNames.has(name))
-                    .map(([userName, weeks]) => ({
-                      userName,
-                      allWeeks: [...weeks].sort(
-                        (a, b) =>
-                          new Date(b.weekStart).getTime() -
-                          new Date(a.weekStart).getTime()
-                      ),
-                    }));
-                  // Pure bys participants with no history at all
-                  const noHistoryParticipants = allParticipants
-                    .filter(
-                      (p) =>
-                        !submittedNames.has(p.name) &&
-                        !historicButNotThisWeek.some(
-                          (r) => r.userName === p.name
-                        )
-                    )
-                    .map((p) => ({
-                      userName: p.name,
-                      allWeeks: [] as WeeklySummaryWithUser[],
-                    }));
-
-                  const notSubmittedRows = [
-                    ...historicButNotThisWeek,
-                    ...noHistoryParticipants,
-                  ].sort((a, b) => a.userName.localeCompare(b.userName));
-
-                  const lastWeekRows = submittedRows;
-
-                  const medals = ['🥇', '🥈', '🥉'];
-                  const podiumColors = [
-                    // Gold
-                    'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700',
-                    // Silver
-                    'bg-slate-50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-600',
-                    // Bronze
-                    'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700',
-                  ];
-                  const podiumScoreColors = [
-                    'text-yellow-600 dark:text-yellow-400',
-                    'text-slate-500 dark:text-slate-400',
-                    'text-orange-500 dark:text-orange-400',
-                  ];
-                  const rankBadge = (idx: number) => {
-                    if (idx === 0) return <span className='text-base'>🥇</span>;
-                    if (idx === 1) return <span className='text-base'>🥈</span>;
-                    if (idx === 2) return <span className='text-base'>🥉</span>;
-                    return (
-                      <span className='text-sm text-muted-foreground font-medium'>
-                        {idx + 1}
-                      </span>
-                    );
-                  };
-
-                  return (
-                    <div className='space-y-4'>
-                      {lastWeekRows.length === 0 &&
-                      notSubmittedRows.length === 0 ? (
-                        <p className='text-sm text-muted-foreground text-center py-8'>
-                          No weekly scores calculated yet
-                        </p>
-                      ) : (
-                        <>
-                          {/* Last week header */}
-                          {latestWeekStart && (
-                            <p className='text-sm text-muted-foreground px-1'>
-                              Last week:{' '}
-                              <span className='font-medium text-foreground'>
-                                {format(
-                                  parseLocalDate(latestWeekStart),
-                                  'MMM d'
-                                )}{' '}
-                                –{' '}
-                                {format(
-                                  addDays(parseLocalDate(latestWeekStart), 6),
-                                  'MMM d, yyyy'
-                                )}
-                              </span>
-                              <span className='ml-2 text-xs'>
-                                (click a row to see full history)
-                              </span>
-                            </p>
-                          )}
-
-                          {/* Top-3 podium */}
-                          {lastWeekRows.length >= 1 && (
-                            <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
-                              {lastWeekRows
-                                .slice(0, 3)
-                                .map(({ userName, lastWeek }, idx) => (
-                                  <div
-                                    key={userName}
-                                    className={`relative rounded-xl border-2 p-4 ${podiumColors[idx]} ${idx === 0 ? 'sm:order-2' : idx === 1 ? 'sm:order-1' : 'sm:order-3'}`}
-                                  >
-                                    {/* Medal */}
-                                    <div className='flex items-center justify-between mb-2'>
-                                      <span className='text-2xl'>
-                                        {medals[idx]}
-                                      </span>
-                                      {idx === 0 && (
-                                        <span className='text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'>
-                                          Champion
-                                        </span>
-                                      )}
-                                    </div>
-                                    <p className='font-bold text-base truncate'>
-                                      {userName}
-                                    </p>
-                                    <p
-                                      className={`text-2xl font-black mt-1 ${podiumScoreColors[idx]}`}
-                                    >
-                                      {lastWeek!.overallAverage.toFixed(1)}%
-                                    </p>
-                                    <div className='flex gap-3 mt-2 text-xs text-muted-foreground'>
-                                      <span className='text-purple-600 dark:text-purple-400'>
-                                        Soul{' '}
-                                        {lastWeek!.totalSoulScore.toFixed(1)}%
-                                      </span>
-                                      <span className='text-blue-600 dark:text-blue-400'>
-                                        Body{' '}
-                                        {lastWeek!.totalBodyScore.toFixed(1)}%
-                                      </span>
-                                    </div>
-                                    <p className='text-xs text-muted-foreground mt-1'>
-                                      {lastWeek!.daysRecorded}/7 days
-                                    </p>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-
-                          {/* Full leaderboard table */}
-                          <Card>
-                            <CardContent className='p-0 overflow-x-auto'>
-                              <Table>
-                                <TableHeader>
-                                  <TableRow>
-                                    <TableHead className='w-10 text-center'>
-                                      #
-                                    </TableHead>
-                                    <TableHead>Participant</TableHead>
-                                    <TableHead className='text-center text-purple-600 dark:text-purple-400'>
-                                      Soul
-                                    </TableHead>
-                                    <TableHead className='text-center text-blue-600 dark:text-blue-400'>
-                                      Body
-                                    </TableHead>
-                                    <TableHead className='text-center text-green-600 dark:text-green-400'>
-                                      Overall
-                                    </TableHead>
-                                    <TableHead className='text-center'>
-                                      Days
-                                    </TableHead>
-                                    <TableHead className='w-8'></TableHead>
-                                  </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                  {lastWeekRows.map(
-                                    ({ userName, lastWeek, allWeeks }, idx) => (
-                                      <>
-                                        <TableRow
-                                          key={userName}
-                                          className={`cursor-pointer transition-colors ${
-                                            idx === 0
-                                              ? 'bg-yellow-50/60 dark:bg-yellow-900/10 hover:bg-yellow-100/60 dark:hover:bg-yellow-900/20'
-                                              : idx === 1
-                                                ? 'bg-slate-50/60 dark:bg-slate-800/20 hover:bg-slate-100/60 dark:hover:bg-slate-800/30'
-                                                : idx === 2
-                                                  ? 'bg-orange-50/60 dark:bg-orange-900/10 hover:bg-orange-100/60 dark:hover:bg-orange-900/20'
-                                                  : 'hover:bg-muted/50'
-                                          }`}
-                                          onClick={() =>
-                                            setExpandedWeeklyUser(
-                                              expandedWeeklyUser === userName
-                                                ? null
-                                                : userName
-                                            )
-                                          }
-                                        >
-                                          <TableCell className='text-center'>
-                                            {rankBadge(idx)}
-                                          </TableCell>
-                                          <TableCell className='font-medium'>
-                                            {userName}
-                                          </TableCell>
-                                          <TableCell className='text-center text-purple-600 dark:text-purple-400 font-semibold'>
-                                            {lastWeek!.totalSoulScore.toFixed(
-                                              1
-                                            )}
-                                            %
-                                          </TableCell>
-                                          <TableCell className='text-center text-blue-600 dark:text-blue-400 font-semibold'>
-                                            {lastWeek!.totalBodyScore.toFixed(
-                                              1
-                                            )}
-                                            %
-                                          </TableCell>
-                                          <TableCell
-                                            className={`text-center font-bold ${
-                                              idx === 0
-                                                ? 'text-yellow-600 dark:text-yellow-400'
-                                                : idx === 1
-                                                  ? 'text-slate-500 dark:text-slate-400'
-                                                  : idx === 2
-                                                    ? 'text-orange-500 dark:text-orange-400'
-                                                    : 'text-green-600 dark:text-green-400'
-                                            }`}
-                                          >
-                                            {lastWeek!.overallAverage.toFixed(
-                                              1
-                                            )}
-                                            %
-                                          </TableCell>
-                                          <TableCell className='text-center text-muted-foreground text-sm'>
-                                            {lastWeek!.daysRecorded}/7
-                                          </TableCell>
-                                          <TableCell>
-                                            {expandedWeeklyUser === userName ? (
-                                              <ChevronUp className='h-4 w-4 text-muted-foreground' />
-                                            ) : (
-                                              <ChevronDown className='h-4 w-4 text-muted-foreground' />
-                                            )}
-                                          </TableCell>
-                                        </TableRow>
-
-                                        {/* Expanded history */}
-                                        {expandedWeeklyUser === userName && (
-                                          <TableRow
-                                            key={`${userName}-expanded`}
-                                          >
-                                            <TableCell
-                                              colSpan={7}
-                                              className='p-0 bg-muted/20'
-                                            >
-                                              <div className='p-4 space-y-3'>
-                                                <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wide'>
-                                                  Full History – {userName}
-                                                </p>
-                                                <div className='space-y-2'>
-                                                  {allWeeks.map((week) => (
-                                                    <div
-                                                      key={week.id}
-                                                      className='flex flex-wrap items-center gap-3 p-3 bg-background rounded-lg border text-sm'
-                                                    >
-                                                      <span className='font-medium w-36 shrink-0'>
-                                                        {format(
-                                                          parseLocalDate(
-                                                            week.weekStart
-                                                          ),
-                                                          'MMM d'
-                                                        )}
-                                                        {' – '}
-                                                        {format(
-                                                          parseLocalDate(
-                                                            week.weekEnd
-                                                          ),
-                                                          'MMM d, yyyy'
-                                                        )}
-                                                      </span>
-                                                      <span className='text-purple-600 dark:text-purple-400'>
-                                                        Soul:{' '}
-                                                        {week.totalSoulScore.toFixed(
-                                                          1
-                                                        )}
-                                                        %
-                                                      </span>
-                                                      <span className='text-blue-600 dark:text-blue-400'>
-                                                        Body:{' '}
-                                                        {week.totalBodyScore.toFixed(
-                                                          1
-                                                        )}
-                                                        %
-                                                      </span>
-                                                      <span className='text-green-600 dark:text-green-400 font-semibold'>
-                                                        Overall:{' '}
-                                                        {week.overallAverage.toFixed(
-                                                          1
-                                                        )}
-                                                        %
-                                                      </span>
-                                                      <span className='text-muted-foreground text-xs ml-auto'>
-                                                        {week.daysRecorded}/7
-                                                        days
-                                                      </span>
-                                                    </div>
-                                                  ))}
-                                                </div>
-                                              </div>
-                                            </TableCell>
-                                          </TableRow>
-                                        )}
-                                      </>
-                                    )
-                                  )}
-                                  {/* Not-submitted participants */}
-                                  {notSubmittedRows.map(
-                                    ({ userName, allWeeks }) => (
-                                      <>
-                                        <TableRow
-                                          key={`ns-${userName}`}
-                                          className='cursor-pointer opacity-60 hover:opacity-80 transition-opacity'
-                                          onClick={() =>
-                                            allWeeks.length > 0
-                                              ? setExpandedWeeklyUser(
-                                                  expandedWeeklyUser ===
-                                                    `ns-${userName}`
-                                                    ? null
-                                                    : `ns-${userName}`
-                                                )
-                                              : undefined
-                                          }
-                                        >
-                                          <TableCell className='text-center text-muted-foreground'>
-                                            –
-                                          </TableCell>
-                                          <TableCell className='font-medium'>
-                                            {userName}
-                                          </TableCell>
-                                          <TableCell
-                                            colSpan={3}
-                                            className='text-center'
-                                          >
-                                            <span className='inline-flex items-center gap-1.5 text-xs text-muted-foreground italic'>
-                                              <span className='inline-block w-1.5 h-1.5 rounded-full bg-muted-foreground/40'></span>
-                                              Not submitted this week
-                                            </span>
-                                          </TableCell>
-                                          <TableCell className='text-center text-muted-foreground text-sm'>
-                                            –
-                                          </TableCell>
-                                          <TableCell>
-                                            {allWeeks.length > 0 &&
-                                              (expandedWeeklyUser ===
-                                              `ns-${userName}` ? (
-                                                <ChevronUp className='h-4 w-4 text-muted-foreground' />
-                                              ) : (
-                                                <ChevronDown className='h-4 w-4 text-muted-foreground' />
-                                              ))}
-                                          </TableCell>
-                                        </TableRow>
-
-                                        {expandedWeeklyUser ===
-                                          `ns-${userName}` &&
-                                          allWeeks.length > 0 && (
-                                            <TableRow
-                                              key={`ns-${userName}-expanded`}
-                                            >
-                                              <TableCell
-                                                colSpan={7}
-                                                className='p-0 bg-muted/20'
-                                              >
-                                                <div className='p-4 space-y-3'>
-                                                  <p className='text-xs font-semibold text-muted-foreground uppercase tracking-wide'>
-                                                    Past History – {userName}
-                                                  </p>
-                                                  <div className='space-y-2'>
-                                                    {allWeeks.map((week) => (
-                                                      <div
-                                                        key={week.id}
-                                                        className='flex flex-wrap items-center gap-3 p-3 bg-background rounded-lg border text-sm'
-                                                      >
-                                                        <span className='font-medium w-36 shrink-0'>
-                                                          {format(
-                                                            parseLocalDate(
-                                                              week.weekStart
-                                                            ),
-                                                            'MMM d'
-                                                          )}
-                                                          {' – '}
-                                                          {format(
-                                                            parseLocalDate(
-                                                              week.weekEnd
-                                                            ),
-                                                            'MMM d, yyyy'
-                                                          )}
-                                                        </span>
-                                                        <span className='text-purple-600 dark:text-purple-400'>
-                                                          Soul:{' '}
-                                                          {week.totalSoulScore.toFixed(
-                                                            1
-                                                          )}
-                                                          %
-                                                        </span>
-                                                        <span className='text-blue-600 dark:text-blue-400'>
-                                                          Body:{' '}
-                                                          {week.totalBodyScore.toFixed(
-                                                            1
-                                                          )}
-                                                          %
-                                                        </span>
-                                                        <span className='text-green-600 dark:text-green-400 font-semibold'>
-                                                          Overall:{' '}
-                                                          {week.overallAverage.toFixed(
-                                                            1
-                                                          )}
-                                                          %
-                                                        </span>
-                                                        <span className='text-muted-foreground text-xs ml-auto'>
-                                                          {week.daysRecorded}/7
-                                                          days
-                                                        </span>
-                                                      </div>
-                                                    ))}
-                                                  </div>
-                                                </div>
-                                              </TableCell>
-                                            </TableRow>
-                                          )}
-                                      </>
-                                    )
-                                  )}
-                                </TableBody>
-                              </Table>
-                            </CardContent>
-                          </Card>
-                        </>
-                      )}
-                    </div>
-                  );
-                })()}
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Weekly Score Popup */}
+      {scorePopup && (
+        <div className='fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4'>
+          <div className='bg-background rounded-xl shadow-xl border w-full max-w-sm space-y-5 p-6'>
+            <h2 className='text-lg font-semibold text-center'>
+              Weekly Score Results
+            </h2>
+
+            <div className='grid grid-cols-2 gap-3'>
+              <div className='p-4 bg-purple-50 dark:bg-purple-950/30 rounded-lg text-center'>
+                <p className='text-xs text-muted-foreground mb-1'>Soul Score</p>
+                <p
+                  className={`text-2xl font-black ${scorePopup.soulScore < 80 ? 'text-red-500 dark:text-red-400' : 'text-purple-600 dark:text-purple-400'}`}
+                >
+                  {scorePopup.soulScore.toFixed(1)}%
+                </p>
+                {scorePopup.soulScore < 80 && (
+                  <p className='text-xs text-red-500 mt-1'>Below 80%</p>
+                )}
+              </div>
+              <div className='p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg text-center'>
+                <p className='text-xs text-muted-foreground mb-1'>Body Score</p>
+                <p
+                  className={`text-2xl font-black ${scorePopup.bodyScore < 80 ? 'text-red-500 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}
+                >
+                  {scorePopup.bodyScore.toFixed(1)}%
+                </p>
+                {scorePopup.bodyScore < 80 && (
+                  <p className='text-xs text-red-500 mt-1'>Below 80%</p>
+                )}
+              </div>
+            </div>
+
+            {(scorePopup.soulScore < 80 || scorePopup.bodyScore < 80) && (
+              <div className='space-y-2'>
+                <label className='text-sm font-medium'>
+                  Please explain your low score
+                  <span className='text-red-500 ml-0.5'>*</span>
+                </label>
+                <textarea
+                  className='w-full rounded-md border bg-background px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary'
+                  rows={3}
+                  placeholder='What happened this week? What will you do differently?'
+                  value={explanation}
+                  onChange={(e) => setExplanation(e.target.value)}
+                />
+              </div>
+            )}
+
+            <Button
+              className='w-full'
+              onClick={handlePopupClose}
+              disabled={
+                savingExplanation ||
+                ((scorePopup.soulScore < 80 || scorePopup.bodyScore < 80) &&
+                  !explanation.trim())
+              }
+            >
+              {savingExplanation
+                ? 'Saving...'
+                : scorePopup.soulScore < 80 || scorePopup.bodyScore < 80
+                  ? 'Submit Explanation'
+                  : 'Close'}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
