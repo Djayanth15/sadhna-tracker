@@ -194,10 +194,12 @@ export async function POST(req: NextRequest) {
       60
     );
 
-    const studyWorkEffectiveScore = Math.min(
-      (totalStudyWorkMinutes / maxStudyWorkMinutes) * 140,
-      140
-    );
+    // When maxHoursStudyWork is 0, study/work tracking is opted out.
+    // studyWorkEffectiveScore stays 0 and the body denominator shrinks from 595 to 455.
+    const studyWorkEnabled = goals.maxHoursStudyWork > 0;
+    const studyWorkEffectiveScore = studyWorkEnabled
+      ? Math.min((totalStudyWorkMinutes / maxStudyWorkMinutes) * 140, 140)
+      : 0;
 
     // Calculate total scores
     // Soul: (MP+Japa scores + lecture effective + reading effective) / 440 * 100
@@ -207,10 +209,13 @@ export async function POST(req: NextRequest) {
         440) *
       100;
 
-    // Body: (daily body scores + study/work effective) / 595 * 100
-    // Daily body max = 455 (7 days * 65), study/work max = 140
+    // Body: (daily body scores + study/work effective) / max * 100
+    // With study/work:    max = 595 (455 daily + 140 study/work)
+    // Without study/work: max = 455 (daily body only)
+    const bodyDenominator = studyWorkEnabled ? 595 : 455;
     const totalBodyScore =
-      ((totalDailyBodyScore + studyWorkEffectiveScore) / 595) * 100;
+      ((totalDailyBodyScore + studyWorkEffectiveScore) / bodyDenominator) *
+      100;
 
     const overallAverage = (totalSoulScore + totalBodyScore) / 2;
 
