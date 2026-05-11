@@ -682,6 +682,10 @@ export function DailyQuestionnaire({
     sleepTime20Points: '21:15',
     sleepTime10Points: '22:00',
   });
+  const [maxHoursStudyWork, setMaxHoursStudyWork] = useState<number | null>(
+    null
+  );
+
   useEffect(() => {
     const tz = getUserTimezone();
     setUserTimezone(tz);
@@ -701,6 +705,7 @@ export function DailyQuestionnaire({
               sleepTime20Points: data.sleepTime20Points || '21:15',
               sleepTime10Points: data.sleepTime10Points || '22:00',
             });
+            setMaxHoursStudyWork(data.maxHoursStudyWork ?? null);
           }
         }
       } catch (error) {
@@ -1212,41 +1217,45 @@ export function DailyQuestionnaire({
             </div>
           </div>
 
-          {/* Study/Work Hours */}
-          <div className='space-y-2'>
-            <Label className='text-sm sm:text-base'>Hours of Study/Work</Label>
-            <div className='grid grid-cols-2 gap-2 sm:gap-3'>
-              <div className='space-y-1'>
-                <Input
-                  type='number'
-                  min='0'
-                  placeholder='Hours'
-                  value={studyWorkHours}
-                  onChange={(e) => setStudyWorkHours(e.target.value)}
-                  className='text-sm sm:text-base'
-                />
-                <p className='text-xs text-muted-foreground'>Hours</p>
+          {/* Study/Work Hours — hidden when goal is set to 0 */}
+          {maxHoursStudyWork !== 0 && (
+            <div className='space-y-2'>
+              <Label className='text-sm sm:text-base'>
+                Hours of Study/Work
+              </Label>
+              <div className='grid grid-cols-2 gap-2 sm:gap-3'>
+                <div className='space-y-1'>
+                  <Input
+                    type='number'
+                    min='0'
+                    placeholder='Hours'
+                    value={studyWorkHours}
+                    onChange={(e) => setStudyWorkHours(e.target.value)}
+                    className='text-sm sm:text-base'
+                  />
+                  <p className='text-xs text-muted-foreground'>Hours</p>
+                </div>
+                <div className='space-y-1'>
+                  <Input
+                    type='number'
+                    min='0'
+                    max='59'
+                    placeholder='Minutes'
+                    value={studyWorkMinutes}
+                    onChange={(e) => setStudyWorkMinutes(e.target.value)}
+                    className='text-sm sm:text-base'
+                  />
+                  <p className='text-xs text-muted-foreground'>Minutes</p>
+                </div>
               </div>
-              <div className='space-y-1'>
-                <Input
-                  type='number'
-                  min='0'
-                  max='59'
-                  placeholder='Minutes'
-                  value={studyWorkMinutes}
-                  onChange={(e) => setStudyWorkMinutes(e.target.value)}
-                  className='text-sm sm:text-base'
-                />
-                <p className='text-xs text-muted-foreground'>Minutes</p>
-              </div>
+              <p className='text-xs sm:text-sm text-muted-foreground font-medium'>
+                Total:{' '}
+                {(parseFloat(studyWorkHours) || 0) * 60 +
+                  (parseFloat(studyWorkMinutes) || 0)}{' '}
+                minutes
+              </p>
             </div>
-            <p className='text-xs sm:text-sm text-muted-foreground font-medium'>
-              Total:{' '}
-              {(parseFloat(studyWorkHours) || 0) * 60 +
-                (parseFloat(studyWorkMinutes) || 0)}{' '}
-              minutes
-            </p>
-          </div>
+          )}
 
           {/* Rest Minutes */}
           <div className='space-y-2'>

@@ -57,7 +57,8 @@ export function GoalsForm({ onComplete, existingGoals }: GoalsFormProps) {
     const reading = parseFloat(readingHours);
     const studyWork = parseFloat(studyWorkHours);
 
-    if (lectures > 0 && reading > 0 && studyWork > 0) {
+    // studyWork can be 0 to opt-out of study/work tracking
+    if (lectures > 0 && reading > 0 && !isNaN(studyWork) && studyWork >= 0) {
       setLoading(true);
       try {
         const response = await fetch('/api/goals', {
@@ -143,7 +144,9 @@ export function GoalsForm({ onComplete, existingGoals }: GoalsFormProps) {
             placeholder='e.g., 40'
           />
           <p className='text-sm text-muted-foreground'>
-            How many hours per week do you plan to study or work?
+            How many hours per week do you plan to study or work? Set to{' '}
+            <strong>0</strong> to skip study/work tracking — the body score will
+            be calculated without it.
           </p>
         </div>
 
@@ -212,7 +215,10 @@ export function GoalsForm({ onComplete, existingGoals }: GoalsFormProps) {
         <Button
           onClick={handleSubmit}
           disabled={
-            loading || !lectureHours || !readingHours || !studyWorkHours
+            loading ||
+            !lectureHours ||
+            !readingHours ||
+            studyWorkHours === ''
           }
           className='w-full'
         >

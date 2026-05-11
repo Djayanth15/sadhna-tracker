@@ -25,6 +25,7 @@ import {
   ChevronDown,
   ChevronUp,
   Users,
+  Trophy,
 } from 'lucide-react';
 import {
   format,
@@ -35,6 +36,7 @@ import {
 } from 'date-fns';
 import { GoalsForm } from './goals-form';
 import { DailyQuestionnaire } from './daily-questionnaire';
+import { Leaderboard } from './leaderboard';
 
 interface WeeklyGoals {
   maxHoursLectures: number;
@@ -120,9 +122,9 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split('T')[0]
   );
-  const [view, setView] = useState<'goals' | 'entry' | 'weekly' | 'admin'>(
-    'entry'
-  );
+  const [view, setView] = useState<
+    'goals' | 'entry' | 'weekly' | 'admin' | 'leaderboard'
+  >('entry');
   const [adminView, setAdminView] = useState<'daily' | 'weekly'>('daily');
   const [expandedWeeklyUser, setExpandedWeeklyUser] = useState<string | null>(
     null
@@ -404,18 +406,38 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                   <BarChart3 className='mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4' />
                   <span className='text-xs sm:text-sm'>Weekly</span>
                 </Button>
+                <Button
+                  onClick={() => setView('leaderboard')}
+                  variant={view === 'leaderboard' ? 'default' : 'outline'}
+                  size='sm'
+                  className='flex-shrink-0'
+                >
+                  <Trophy className='mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                  <span className='text-xs sm:text-sm'>Leaderboard</span>
+                </Button>
               </>
             )}
             {isAdmin && (
-              <Button
-                onClick={() => setView('admin')}
-                variant={view === 'admin' ? 'default' : 'outline'}
-                size='sm'
-                className='flex-shrink-0'
-              >
-                <TrendingUp className='mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                <span className='text-xs sm:text-sm'>All Users</span>
-              </Button>
+              <>
+                <Button
+                  onClick={() => setView('admin')}
+                  variant={view === 'admin' ? 'default' : 'outline'}
+                  size='sm'
+                  className='flex-shrink-0'
+                >
+                  <TrendingUp className='mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                  <span className='text-xs sm:text-sm'>All Users</span>
+                </Button>
+                <Button
+                  onClick={() => setView('leaderboard')}
+                  variant={view === 'leaderboard' ? 'default' : 'outline'}
+                  size='sm'
+                  className='flex-shrink-0'
+                >
+                  <Trophy className='mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                  <span className='text-xs sm:text-sm'>Leaderboard</span>
+                </Button>
+              </>
             )}
           </div>
         </CardHeader>
@@ -770,6 +792,21 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                   ))
                 )}
               </div>
+            </div>
+          )}
+
+          {/* Leaderboard View */}
+          {view === 'leaderboard' && (
+            <div className='space-y-4'>
+              <div>
+                <h2 className='text-base sm:text-lg font-semibold'>
+                  Leaderboard
+                </h2>
+                <p className='text-xs sm:text-sm text-muted-foreground mt-0.5'>
+                  Participants ranked by cumulative average score
+                </p>
+              </div>
+              <Leaderboard currentUserId={user.id} />
             </div>
           )}
 
