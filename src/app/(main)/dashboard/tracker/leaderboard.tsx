@@ -9,11 +9,9 @@ import { format, startOfWeek, addDays } from 'date-fns';
 interface LeaderboardEntry {
   userId: string;
   name: string;
-  avgOverall: number;
-  avgSoul: number;
-  avgBody: number;
-  weeksRecorded: number;
-  latestWeekScore: number | null;
+  weekScore: number | null;
+  soulScore: number | null;
+  bodyScore: number | null;
 }
 
 interface LeaderboardProps {
@@ -70,23 +68,20 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
 
   const today = getMondayOfWeek(new Date());
 
-  const fetchLeaderboard = useCallback(
-    async (ws: Date) => {
-      setLoading(true);
-      try {
-        const weekStartStr = format(ws, 'yyyy-MM-dd');
-        const res = await fetch(`/api/leaderboard?weekStart=${weekStartStr}`);
-        if (res.ok) {
-          setEntries(await res.json());
-        }
-      } catch (e) {
-        console.error('Failed to fetch leaderboard:', e);
-      } finally {
-        setLoading(false);
+  const fetchLeaderboard = useCallback(async (ws: Date) => {
+    setLoading(true);
+    try {
+      const weekStartStr = format(ws, 'yyyy-MM-dd');
+      const res = await fetch(`/api/leaderboard?weekStart=${weekStartStr}`);
+      if (res.ok) {
+        setEntries(await res.json());
       }
-    },
-    []
-  );
+    } catch (e) {
+      console.error('Failed to fetch leaderboard:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchLeaderboard(weekStart);
@@ -102,8 +97,8 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
 
   const isCurrentWeek = weekStart.getTime() === today.getTime();
 
-  const activeEntries = entries.filter((e) => e.weeksRecorded > 0);
-  const noDataEntries = entries.filter((e) => e.weeksRecorded === 0);
+  const activeEntries = entries.filter((e) => e.weekScore !== null);
+  const noDataEntries = entries.filter((e) => e.weekScore === null);
 
   return (
     <div className='space-y-4'>
@@ -122,7 +117,7 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
         <div className='text-center flex-1 sm:flex-none'>
           <p className='text-sm font-medium'>{formatWeekRange(weekStart)}</p>
           <p className='text-xs text-muted-foreground'>
-            Cumulative avg up to this week
+            {isCurrentWeek ? 'This week' : 'Weekly scores'}
           </p>
         </div>
 
@@ -188,11 +183,7 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
                         <p
                           className={`text-2xl font-black ${rankColors[rank - 1]}`}
                         >
-                          {entry.avgOverall.toFixed(1)}%
-                        </p>
-                        <p className='text-xs text-muted-foreground mt-1'>
-                          {entry.weeksRecorded} week
-                          {entry.weeksRecorded !== 1 ? 's' : ''}
+                          {entry.weekScore!.toFixed(1)}%
                         </p>
                       </CardContent>
                     </Card>
@@ -236,26 +227,22 @@ export function Leaderboard({ currentUserId }: LeaderboardProps) {
                         </span>
                       )}
                     </p>
-                    <p className='text-xs text-muted-foreground'>
-                      {entry.weeksRecorded} week
-                      {entry.weeksRecorded !== 1 ? 's' : ''} recorded
-                    </p>
                   </div>
 
                   {/* Scores */}
                   <div className='flex flex-col items-end gap-0.5 shrink-0'>
-                    <ScoreBadge value={entry.avgOverall} />
+                    <ScoreBadge value={entry.weekScore!} />
                     <div className='flex gap-2 text-xs text-muted-foreground'>
                       <span>
                         S:{' '}
                         <span className='text-purple-500'>
-                          {entry.avgSoul.toFixed(0)}%
+                          {entry.soulScore!.toFixed(0)}%
                         </span>
                       </span>
                       <span>
                         B:{' '}
                         <span className='text-blue-500'>
-                          {entry.avgBody.toFixed(0)}%
+                          {entry.bodyScore!.toFixed(0)}%
                         </span>
                       </span>
                     </div>
