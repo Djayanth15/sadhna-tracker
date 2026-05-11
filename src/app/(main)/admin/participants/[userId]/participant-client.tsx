@@ -55,6 +55,7 @@ interface WeeklySummary {
   daysWithJapa20: number;
   daysWithSleep20: number;
   daysWithWake20: number;
+  explanation: string | null;
 }
 
 interface ParticipantData {
@@ -230,6 +231,18 @@ function WeekAnalysis({
               <p className='font-semibold'>{summary.daysWithSleep20}/7 days</p>
             </div>
           </div>
+
+          {/* Explanation (shown if score was low) */}
+          {summary.explanation && (
+            <div className='rounded-md border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/30 p-3'>
+              <p className='text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-1'>
+                Explanation
+              </p>
+              <p className='text-sm text-amber-900 dark:text-amber-200 whitespace-pre-wrap'>
+                {summary.explanation}
+              </p>
+            </div>
+          )}
 
           {/* Day-by-day breakdown */}
           {weekScores.length > 0 && (
