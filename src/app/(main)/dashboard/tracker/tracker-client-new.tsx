@@ -120,12 +120,15 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split('T')[0]
   );
-  const [view, setView] = useState<'goals' | 'entry' | 'weekly' | 'admin'>(
-    'entry'
-  );
+  const [view, setView] = useState<
+    'goals' | 'entry' | 'weekly' | 'admin' | 'leaderboard'
+  >('entry');
   const [adminView, setAdminView] = useState<'daily' | 'weekly'>('daily');
   const [expandedWeeklyUser, setExpandedWeeklyUser] = useState<string | null>(
     null
+  );
+  const [leaderboardWeekStart, setLeaderboardWeekStart] = useState(() =>
+    format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd')
   );
   const [loading, setLoading] = useState(false);
   const [allUsersScores, setAllUsersScores] = useState<DailyScore[]>([]);
@@ -163,6 +166,10 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
       } else if (view === 'entry') {
         fetchDailyScores();
       }
+    }
+    if (view === 'leaderboard' && allUsersWeeklyScores.length === 0) {
+      fetchAllUsersWeeklyScores();
+      if (allParticipants.length === 0) fetchAllParticipants();
     }
   }, [view]);
 
@@ -406,6 +413,16 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                 </Button>
               </>
             )}
+            {/* Leaderboard tab — visible to everyone */}
+            <Button
+              onClick={() => setView('leaderboard')}
+              variant={view === 'leaderboard' ? 'default' : 'outline'}
+              size='sm'
+              className='flex-shrink-0'
+            >
+              <TrendingUp className='mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+              <span className='text-xs sm:text-sm'>Leaderboard</span>
+            </Button>
             {isAdmin && (
               <Button
                 onClick={() => setView('admin')}
@@ -413,8 +430,8 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
                 size='sm'
                 className='flex-shrink-0'
               >
-                <TrendingUp className='mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4' />
-                <span className='text-xs sm:text-sm'>All Users</span>
+                <Users className='mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4' />
+                <span className='text-xs sm:text-sm'>Participants</span>
               </Button>
             )}
           </div>
@@ -772,6 +789,235 @@ export function TrackerClientNew({ user }: TrackerClientProps) {
               </div>
             </div>
           )}
+
+          {/* Leaderboard View */}
+          {view === 'leaderboard' &&
+            (() => {
+              const lbWeekStart = new Date(leaderboardWeekStart + 'T00:00:00');
+              const lbWeekEnd = addDays(lbWeekStart, 6);
+              const lbWeekStartStr = format(lbWeekStart, 'yyyy-MM-dd');
+
+              const weekRows = allUsersWeeklyScores
+                .filter((s) => s.weekStart.split('T')[0] === lbWeekStartStr)
+                .sort((a, b) => b.overallAverage - a.overallAverage);
+
+              const submittedNames = new Set(
+                weekRows.map((r) => r.user?.name || '')
+              );
+              const notSubmitted = allParticipants.filter(
+                (p) => !submittedNames.has(p.name)
+              );
+
+              const medals = ['🥇', '🥈', '🥉'];
+              const podiumColors = [
+                'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-300 dark:border-yellow-700',
+                'bg-slate-50 dark:bg-slate-800/40 border-slate-300 dark:border-slate-600',
+                'bg-orange-50 dark:bg-orange-900/20 border-orange-300 dark:border-orange-700',
+              ];
+              const podiumScoreColors = [
+                'text-yellow-600 dark:text-yellow-400',
+                'text-slate-500 dark:text-slate-400',
+                'text-orange-500 dark:text-orange-400',
+              ];
+              const rankBadge = (idx: number) => {
+                if (idx < 3)
+                  return <span className='text-base'>{medals[idx]}</span>;
+                return (
+                  <span className='text-sm text-muted-foreground font-medium'>
+                    {idx + 1}
+                  </span>
+                );
+              };
+
+              const isCurrentWeek =
+                lbWeekStartStr ===
+                format(
+                  startOfWeek(new Date(), { weekStartsOn: 1 }),
+                  'yyyy-MM-dd'
+                );
+
+              return (
+                <div className='space-y-4'>
+                  {/* Week navigation */}
+                  <div className='flex items-center justify-between gap-2'>
+                    <div>
+                      <p className='text-sm font-medium'>
+                        {format(lbWeekStart, 'MMM d')} –{' '}
+                        {format(lbWeekEnd, 'MMM d, yyyy')}
+                      </p>
+                      <p className='text-xs text-muted-foreground'>
+                        {weekRows.length} submitted
+                        {notSubmitted.length > 0
+                          ? `, ${notSubmitted.length} pending`
+                          : ''}
+                      </p>
+                    </div>
+                    <div className='flex gap-2'>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() =>
+                          setLeaderboardWeekStart(
+                            format(
+                              addDays(lbWeekStart, -7),
+                              'yyyy-MM-dd'
+                            )
+                          )
+                        }
+                      >
+                        <ChevronLeft className='h-4 w-4' />
+                        <span className='hidden sm:inline ml-1'>Prev</span>
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() =>
+                          setLeaderboardWeekStart(
+                            format(
+                              startOfWeek(new Date(), { weekStartsOn: 1 }),
+                              'yyyy-MM-dd'
+                            )
+                          )
+                        }
+                        disabled={isCurrentWeek}
+                      >
+                        This Week
+                      </Button>
+                      <Button
+                        variant='outline'
+                        size='sm'
+                        onClick={() =>
+                          setLeaderboardWeekStart(
+                            format(addDays(lbWeekStart, 7), 'yyyy-MM-dd')
+                          )
+                        }
+                        disabled={isCurrentWeek}
+                      >
+                        <span className='hidden sm:inline mr-1'>Next</span>
+                        <ChevronRight className='h-4 w-4' />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {weekRows.length === 0 && notSubmitted.length === 0 ? (
+                    <p className='text-sm text-muted-foreground text-center py-8'>
+                      No scores submitted for this week yet.
+                    </p>
+                  ) : (
+                    <>
+                      {/* Top-3 podium */}
+                      {weekRows.length >= 1 && (
+                        <div className='grid grid-cols-1 sm:grid-cols-3 gap-3'>
+                          {weekRows.slice(0, 3).map(({ user: u, ...week }, idx) => (
+                            <div
+                              key={week.id}
+                              className={`relative rounded-xl border-2 p-4 ${podiumColors[idx]} ${idx === 0 ? 'sm:order-2' : idx === 1 ? 'sm:order-1' : 'sm:order-3'}`}
+                            >
+                              <div className='flex items-center justify-between mb-2'>
+                                <span className='text-2xl'>{medals[idx]}</span>
+                                {idx === 0 && (
+                                  <span className='text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200'>
+                                    Champion
+                                  </span>
+                                )}
+                              </div>
+                              <p className='font-bold text-base truncate'>
+                                {u?.name || 'Unknown'}
+                              </p>
+                              <p className={`text-2xl font-black mt-1 ${podiumScoreColors[idx]}`}>
+                                {week.overallAverage.toFixed(1)}%
+                              </p>
+                              <div className='flex gap-3 mt-2 text-xs text-muted-foreground'>
+                                <span className='text-purple-600 dark:text-purple-400'>
+                                  Soul {week.totalSoulScore.toFixed(1)}%
+                                </span>
+                                <span className='text-blue-600 dark:text-blue-400'>
+                                  Body {week.totalBodyScore.toFixed(1)}%
+                                </span>
+                              </div>
+                              <p className='text-xs text-muted-foreground mt-1'>
+                                {week.daysRecorded}/7 days
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Full rankings table */}
+                      <Card>
+                        <CardContent className='p-0 overflow-x-auto'>
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className='w-10 text-center'>#</TableHead>
+                                <TableHead>Participant</TableHead>
+                                <TableHead className='text-center text-purple-600 dark:text-purple-400'>Soul</TableHead>
+                                <TableHead className='text-center text-blue-600 dark:text-blue-400'>Body</TableHead>
+                                <TableHead className='text-center text-green-600 dark:text-green-400'>Overall</TableHead>
+                                <TableHead className='text-center'>Days</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {weekRows.map(({ user: u, ...week }, idx) => (
+                                <TableRow
+                                  key={week.id}
+                                  className={
+                                    idx === 0
+                                      ? 'bg-yellow-50/60 dark:bg-yellow-900/10'
+                                      : idx === 1
+                                        ? 'bg-slate-50/60 dark:bg-slate-800/20'
+                                        : idx === 2
+                                          ? 'bg-orange-50/60 dark:bg-orange-900/10'
+                                          : ''
+                                  }
+                                >
+                                  <TableCell className='text-center'>{rankBadge(idx)}</TableCell>
+                                  <TableCell className='font-medium'>{u?.name || 'Unknown'}</TableCell>
+                                  <TableCell className='text-center text-purple-600 dark:text-purple-400 font-semibold'>
+                                    {week.totalSoulScore.toFixed(1)}%
+                                  </TableCell>
+                                  <TableCell className='text-center text-blue-600 dark:text-blue-400 font-semibold'>
+                                    {week.totalBodyScore.toFixed(1)}%
+                                  </TableCell>
+                                  <TableCell
+                                    className={`text-center font-bold ${
+                                      idx === 0
+                                        ? 'text-yellow-600 dark:text-yellow-400'
+                                        : idx === 1
+                                          ? 'text-slate-500 dark:text-slate-400'
+                                          : idx === 2
+                                            ? 'text-orange-500 dark:text-orange-400'
+                                            : 'text-green-600 dark:text-green-400'
+                                    }`}
+                                  >
+                                    {week.overallAverage.toFixed(1)}%
+                                  </TableCell>
+                                  <TableCell className='text-center text-muted-foreground text-sm'>
+                                    {week.daysRecorded}/7
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                              {notSubmitted.map((p) => (
+                                <TableRow key={`ns-${p.id}`} className='opacity-50'>
+                                  <TableCell className='text-center text-muted-foreground'>–</TableCell>
+                                  <TableCell className='font-medium'>{p.name}</TableCell>
+                                  <TableCell colSpan={3} className='text-center'>
+                                    <span className='text-xs text-muted-foreground italic'>
+                                      Not submitted
+                                    </span>
+                                  </TableCell>
+                                  <TableCell className='text-center text-muted-foreground'>–</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+                </div>
+              );
+            })()}
 
           {/* Admin View - Participants List */}
           {view === 'admin' && isAdmin && (
