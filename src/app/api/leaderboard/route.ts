@@ -16,63 +16,56 @@ export async function GET(req: NextRequest) {
     select: { id: true, name: true },
   });
 
-  // Upper bound: include weeks up to and including the selected weekStart
-  const upToWeekStart = weekStartParam
+  // Determine the exact week to show
+  const weekStart = weekStartParam
     ? new Date(weekStartParam + 'T00:00:00.000Z')
-    : null;
+    : (() => {
+        // Default to current Monday
+        const now = new Date();
+        const day = now.getUTCDay(); // 0=Sun,1=Mon,...
+        const diff = day === 0 ? -6 : 1 - day;
+        const monday = new Date(now);
+        monday.setUTCDate(now.getUTCDate() + diff);
+        monday.setUTCHours(0, 0, 0, 0);
+        return monday;
+      })();
 
-  const allSummaries = await prisma.weeklySummary.findMany({
+  // Fetch only that week's summary for each participant
+  const summaries = await prisma.weeklySummary.findMany({
     where: {
       userId: { in: participants.map((p) => p.id) },
-      ...(upToWeekStart ? { weekStart: { lte: upToWeekStart } } : {}),
+      weekStart,
     },
     select: {
       userId: true,
       overallAverage: true,
       totalSoulScore: true,
       totalBodyScore: true,
-      weekStart: true,
+      daysRecorded: true,
     },
   });
 
+  const summaryByUser = new Map(summaries.map((s) => [s.userId, s]));
+
   const userScores = participants.map((p) => {
-    const summaries = allSummaries.filter((s) => s.userId === p.id);
-    if (summaries.length === 0) {
-      return {
-        userId: p.id,
-        name: p.name,
-        avgOverall: 0,
-        avgSoul: 0,
-        avgBody: 0,
-        weeksRecorded: 0,
-        latestWeekScore: null as number | null,
-      };
-    }
-    const avgOverall =
-      summaries.reduce((sum, s) => sum + s.overallAverage, 0) / summaries.length;
-    const avgSoul =
-      summaries.reduce((sum, s) => sum + s.totalSoulScore, 0) / summaries.length;
-    const avgBody =
-      summaries.reduce((sum, s) => sum + s.totalBodyScore, 0) / summaries.length;
-
-    // Latest week within the selected range
-    const sorted = [...summaries].sort(
-      (a, b) => new Date(b.weekStart).getTime() - new Date(a.weekStart).getTime()
-    );
-    const latestWeekScore = sorted[0]?.overallAverage ?? null;
-
+    const s = summaryByUser.get(p.id);
     return {
       userId: p.id,
       name: p.name,
-      avgOverall,
-      avgSoul,
-      avgBody,
-      weeksRecorded: summaries.length,
-      latestWeekScore,
+      overallScore: s?.overallAverage ?? null,
+      soulScore: s?.totalSoulScore ?? null,
+      bodyScore: s?.totalBodyScore ?? null,
+      daysRecorded: s?.daysRecorded ?? 0,
+      hasData: !!s,
     };
   });
 
-  userScores.sort((a, b) => b.avgOverall - a.avgOverall);
+  // Sort: participants with data first (by overallScore desc), then no-data
+  userScores.sort((a, b) => {
+    if (a.hasData && !b.hasData) return -1;
+    if (!a.hasData && b.hasData) return 1;
+    return (b.overallScore ?? 0) - (a.overallScore ?? 0);
+  });
 
   return NextResponse.json(userScores);
 }
