@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Check, X, Users } from 'lucide-react';
@@ -166,9 +167,13 @@ export function ParticipantsClient() {
                     onClick={() => router.push(`/admin/participants/${p.id}`)}
                   >
                     <td className='py-3 px-4'>
-                      <div className='font-medium truncate max-w-[140px]'>
+                      <Link
+                        href={`/admin/participants/${p.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className='font-medium truncate max-w-[140px] block hover:underline text-primary'
+                      >
                         {p.name}
-                      </div>
+                      </Link>
                       <div className='text-xs text-muted-foreground truncate max-w-[140px]'>
                         {p.email}
                       </div>

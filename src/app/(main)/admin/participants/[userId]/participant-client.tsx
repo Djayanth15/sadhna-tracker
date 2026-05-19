@@ -12,8 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ChevronLeft, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronDown, ChevronUp, Send } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
 
 interface DailyScore {
   id: string;
@@ -311,6 +312,62 @@ function WeekAnalysis({
   );
 }
 
+function SendReminderCard({ userId }: { userId: string }) {
+  const [message, setMessage] = useState('');
+  const [sending, setSending] = useState(false);
+
+  const handleSend = async () => {
+    if (!message.trim()) return;
+    setSending(true);
+    try {
+      const res = await fetch('/api/admin/send-reminder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, message }),
+      });
+      if (res.ok) {
+        toast.success('Reminder email sent!');
+        setMessage('');
+      } else {
+        const err = await res.json();
+        toast.error(err.error ?? 'Failed to send email');
+      }
+    } catch {
+      toast.error('Failed to send email');
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className='p-4 pb-2'>
+        <CardTitle className='text-sm flex items-center gap-2'>
+          <Send className='h-4 w-4' />
+          Send Custom Reminder
+        </CardTitle>
+      </CardHeader>
+      <CardContent className='p-4 pt-2 space-y-3'>
+        <textarea
+          className='w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring resize-none'
+          rows={4}
+          placeholder='Write a custom message for this participant...'
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+        />
+        <Button
+          size='sm'
+          onClick={handleSend}
+          disabled={sending || !message.trim()}
+        >
+          <Send className='h-3.5 w-3.5 mr-1.5' />
+          {sending ? 'Sending...' : 'Send via Email'}
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ParticipantClient({ userId }: { userId: string }) {
   const router = useRouter();
   const [data, setData] = useState<ParticipantData | null>(null);
@@ -406,6 +463,9 @@ export function ParticipantClient({ userId }: { userId: string }) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Custom reminder */}
+      <SendReminderCard userId={userId} />
 
       {/* Weekly breakdowns */}
       <div className='space-y-3'>

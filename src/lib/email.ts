@@ -6,13 +6,15 @@ interface SendEmailValues {
   to: string;
   subject: string;
   text: string;
+  html?: string;
 }
 
-export async function sendEmail({ to, subject, text }: SendEmailValues) {
+export async function sendEmail({ to, subject, text, html }: SendEmailValues) {
   await resend.emails.send({
-    from: 'verification@jayanth-dannana.com',
+    from: 'Sadhna Tracker <verification@jayanth-dannana.com>',
     to,
     subject,
     text,
+    ...(html ? { html } : {}),
   });
 }
